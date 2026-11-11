@@ -13,6 +13,9 @@
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed/index.ts"
   },
+  "prisma": {
+    "schema": "prisma/schema"
+  },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.16",
     "@electric-sql/pglite-socket": "^0.2.19",

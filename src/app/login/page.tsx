@@ -35,7 +35,7 @@ export default function LoginPage() {
       setError(data.message ?? 'เข้าสู่ระบบไม่สำเร็จ');
       return;
     }
-    router.push('/technicians');
+    router.push('/dashboard');
     router.refresh();
   }
 
