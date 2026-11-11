@@ -4,6 +4,7 @@ import { maskBankAccount, maskTaxId } from '@/domain/security/masking';
 import { hashPassword } from '@/lib/auth';
 import { getEnv } from '@/lib/env';
 import { ConfigRepository } from '@/repositories/config.repo';
+import { seedSampleJobs } from './bootstrap-jobs';
 
 const STAFF_USERS = [
   { email: 'wanna@company.co.th', fullName: 'วรรณา (Finance)', role: 'PAYMENT_OFFICER' as const },
@@ -98,6 +99,8 @@ export async function ensureBootstrapped(prisma: PrismaClient): Promise<void> {
       });
     }
   }
+
+  await seedSampleJobs(prisma);
 
   await prisma.auditLog.create({
     data: {

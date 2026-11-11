@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { IntOnboardingSimulatorForm } from '@/components/technicians/IntOnboardingSimulatorForm';
 import {
   TechnicianInspector,
   type TechnicianRowDto,
@@ -26,8 +27,6 @@ export default function TechniciansPage() {
   const [selectedCode, setSelectedCode] = useState('');
   const [toastMsg, setToastMsg] = useState('');
   const [simOpen, setSimOpen] = useState(false);
-  const [simCode, setSimCode] = useState('TC-0510');
-  const [simName, setSimName] = useState('พงศ์พัฒน์ งานเนี๊ยบ');
 
   const loadData = useCallback(async () => {
     const res = await fetch('/api/technicians');
@@ -44,35 +43,6 @@ export default function TechniciansPage() {
   useEffect(() => {
     void loadData();
   }, [loadData]);
-
-  async function simulateIntOnboarding(e: React.FormEvent) {
-    e.preventDefault();
-    const res = await fetch('/api/webhooks/int/technician-approved', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        technicianCode: simCode,
-        fullName: simName,
-        bankName: 'กสิกรไทย',
-        bankAccountNo: '088-2-99123-4',
-        taxId: '1100700991234',
-        approvedAt: new Date().toISOString(),
-      }),
-    });
-    const body = (await res.json()) as { created?: boolean; message?: string };
-    if (!res.ok) {
-      setToastMsg(`ผิดพลาด: ${body.message ?? 'ส่ง Event ไม่สำเร็จ'}`);
-      return;
-    }
-    setSimOpen(false);
-    setSelectedCode(simCode);
-    setToastMsg(
-      body.created
-        ? `รับช่างใหม่ ${simCode} จาก INT แล้ว (สถานะ PENDING_DEPOSIT)`
-        : `ส่งซ้ำ ${simCode} (Idempotent: ไม่สร้างบัญชีซ้ำ)`,
-    );
-    await loadData();
-  }
 
   const visible = items.filter((t) => filter === 'ALL' || t.status === filter);
   const selected =
@@ -113,35 +83,16 @@ export default function TechniciansPage() {
       ) : null}
 
       {simOpen ? (
-        <form
-          onSubmit={(e) => void simulateIntOnboarding(e)}
-          className="bg-white border border-blue-200 rounded-xl p-4 flex flex-wrap items-end gap-3"
-        >
-          <label className="flex flex-col gap-1 text-xs text-slate-600">
-            Technician Code
-            <input
-              value={simCode}
-              onChange={(e) => setSimCode(e.target.value.toUpperCase())}
-              className="border border-slate-300 rounded-lg px-3 py-1.5 text-sm font-mono-code"
-              required
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-xs text-slate-600 flex-1 min-w-48">
-            ชื่อ-นามสกุลช่าง
-            <input
-              value={simName}
-              onChange={(e) => setSimName(e.target.value)}
-              className="border border-slate-300 rounded-lg px-3 py-1.5 text-sm"
-              required
-            />
-          </label>
-          <button
-            type="submit"
-            className="bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold cursor-pointer"
-          >
-            ยิง Webhook INT → BMT
-          </button>
-        </form>
+        <IntOnboardingSimulatorForm
+          onCreated={(code, msg) => {
+            if (code) {
+              setSimOpen(false);
+              setSelectedCode(code);
+            }
+            setToastMsg(msg);
+            void loadData();
+          }}
+        />
       ) : null}
 
       <div className="flex flex-wrap gap-2">
