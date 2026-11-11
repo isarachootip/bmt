@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+:root {
+  --ink: #0f172a;
+  --muted: #475569;
+  --line: #e2e8f0;
+  --bg: #f6f7f9;
+  --card: #ffffff;
+  --pri: #1d4ed8;
+  --pri-d: #1e3a8a;
+  --nav: #0f172a;
+  --nav2: #1e293b;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'IBM Plex Sans Thai', Tahoma, system-ui, sans-serif;
+}
+
+.font-mono-code {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+}

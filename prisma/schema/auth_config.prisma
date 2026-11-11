@@ -1,0 +1,47 @@
+enum UserRole {
+  PAYMENT_OFFICER
+  APPROVER
+  FINANCE_MANAGER
+  ADMIN
+  AUDITOR
+}
+
+enum JobType {
+  Q
+  R
+  MA
+}
+
+enum DispatchCadence {
+  IMMEDIATE
+  DAILY_1600
+  WEEKLY
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  fullName     String
+  role         UserRole
+  passwordHash String
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+}
+
+model JobRuleConfig {
+  id            String   @id @default(cuid())
+  jobType       JobType  @unique
+  stage1Percent Decimal  @default(90.00) @db.Decimal(5, 2)
+  stage2Percent Decimal  @default(10.00) @db.Decimal(5, 2)
+  warrantyDays  Int
+  updatedAt     DateTime @updatedAt
+}
+
+model SystemSetting {
+  id              String          @id @default("singleton")
+  requiredDeposit Decimal         @default(10000.00) @db.Decimal(12, 2)
+  approverLimit   Decimal         @default(50000.00) @db.Decimal(12, 2)
+  dispatchCadence DispatchCadence @default(IMMEDIATE)
+  oracleSimMode   String          @default("NORMAL")
+  updatedAt       DateTime        @updatedAt
+}

@@ -1,0 +1,141 @@
+enum CloseJobIntakeResult {
+  ACCEPTED
+  DUPLICATE_UPDATED
+  REJECTED
+}
+
+enum DbStage1Status {
+  CALCULATED
+  WAIT_APPROVAL
+  APPROVED
+  REJECTED
+  SENT_TO_ORACLE
+  ORACLE_APPROVED
+  PAID
+  SYNC_FAILED
+}
+
+enum DbStage2Status {
+  RETAINED
+  HOLD
+  DUE
+  DEDUCTED_FULL
+  WAIT_APPROVAL
+  APPROVED
+  REJECTED
+  SENT_TO_ORACLE
+  ORACLE_APPROVED
+  PAID
+  SYNC_FAILED
+}
+
+enum PayableKind {
+  STAGE1
+  STAGE2
+  DEPOSIT_REFUND
+  ADJUSTMENT
+}
+
+enum ClaimStatus {
+  OPEN
+  CLOSED_NO_DAMAGE
+  CLOSED_DEDUCTED
+}
+
+model CloseJobEvent {
+  id             String               @id @default(cuid())
+  bookingNo      String
+  taskCode       String
+  jobTitle       String
+  jobType        JobType
+  technicianCode String
+  amount         Decimal              @db.Decimal(12, 2)
+  qcStatus       String
+  confirmedBy    String
+  closedAt       DateTime
+  rawPayload     String
+  result         CloseJobIntakeResult
+  rejectReason   String?
+  receivedAt     DateTime             @default(now())
+
+  @@index([bookingNo, taskCode])
+}
+
+model JobPayment {
+  id                    String          @id @default(cuid())
+  bookingNo             String
+  taskCode              String
+  jobTitle              String
+  jobType               JobType
+  technicianId          String
+  totalAmount           Decimal         @db.Decimal(12, 2)
+  snapshotStage1Pct     Decimal         @db.Decimal(5, 2)
+  snapshotStage2Pct     Decimal         @db.Decimal(5, 2)
+  snapshotWarrantyDays  Int
+  stage1Amount          Decimal         @db.Decimal(12, 2)
+  stage2InitialAmount   Decimal         @db.Decimal(12, 2)
+  stage2RemainingAmount Decimal         @db.Decimal(12, 2)
+  closedAt              DateTime
+  warrantyEndAt         DateTime
+  stage1Status          DbStage1Status  @default(WAIT_APPROVAL)
+  stage2Status          DbStage2Status  @default(RETAINED)
+  confirmedByCustSat    String
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+
+  technician            Technician      @relation(fields: [technicianId], references: [id])
+  payableItems          PayableItem[]
+  claims                WarrantyClaim[]
+
+  @@unique([bookingNo, taskCode])
+  @@index([technicianId])
+  @@index([stage2Status, warrantyEndAt])
+}
+
+model PayableItem {
+  id              String         @id @default(cuid())
+  idempotencyKey  String         @unique
+  kind            PayableKind
+  technicianId    String
+  jobPaymentId    String?
+  bookingRef      String
+  title           String
+  amount          Decimal        @db.Decimal(12, 2)
+  status          DbStage1Status @default(WAIT_APPROVAL)
+  createdByUserId String?
+  decidedByUserId String?
+  decidedByName   String?
+  decidedAt       DateTime?
+  decisionNote    String?
+  oracleDocNo     String?
+  oracleAttempts  Int            @default(0)
+  paidAt          DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  technician      Technician     @relation(fields: [technicianId], references: [id])
+  jobPayment      JobPayment?    @relation(fields: [jobPaymentId], references: [id])
+
+  @@index([status, kind])
+  @@index([technicianId])
+}
+
+model WarrantyClaim {
+  id                  String      @id @default(cuid())
+  claimNo             String      @unique
+  jobPaymentId        String
+  technicianId        String
+  status              ClaimStatus @default(OPEN)
+  reason              String
+  damageAmount        Decimal     @default(0.00) @db.Decimal(12, 2)
+  deductedFromHold    Decimal     @default(0.00) @db.Decimal(12, 2)
+  deductedFromDeposit Decimal     @default(0.00) @db.Decimal(12, 2)
+  recordedDebt        Decimal     @default(0.00) @db.Decimal(12, 2)
+  openedAt            DateTime    @default(now())
+  closedAt            DateTime?
+
+  jobPayment          JobPayment  @relation(fields: [jobPaymentId], references: [id])
+  technician          Technician  @relation(fields: [technicianId], references: [id])
+
+  @@index([jobPaymentId, status])
+}

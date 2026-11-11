@@ -1,0 +1,114 @@
+import type { PrismaClient } from '@prisma/client';
+import { encryptSensitive } from '@/domain/security/crypto';
+import { maskBankAccount, maskTaxId } from '@/domain/security/masking';
+import { hashPassword } from '@/lib/auth';
+import { getEnv } from '@/lib/env';
+import { ConfigRepository } from '@/repositories/config.repo';
+
+const STAFF_USERS = [
+  { email: 'wanna@company.co.th', fullName: 'วรรณา (Finance)', role: 'PAYMENT_OFFICER' as const },
+  { email: 'somporn@company.co.th', fullName: 'สมพร (Approver)', role: 'APPROVER' as const },
+  { email: 'teera@company.co.th', fullName: 'ธีระ (Finance Mgr)', role: 'FINANCE_MANAGER' as const },
+  { email: 'krit@company.co.th', fullName: 'กฤษณ์ (Admin)', role: 'ADMIN' as const },
+  { email: 'auditor@company.co.th', fullName: 'ผู้บริหาร / Auditor', role: 'AUDITOR' as const },
+];
+
+const INITIAL_TECHS = [
+  { code: 'TC-0102', name: 'สมชาย ใจดี', bank: 'กสิกรไทย', acc: '0452994821', tax: '1100700114821', st: 'ACTIVE' as const, depSt: 'VERIFIED' as const, dep: 10000, sup: 'SUP-10102', app: '2026-03-14T09:00:00+07:00' },
+  { code: 'TC-0219', name: 'อนุชา รักงาน', bank: 'ไทยพาณิชย์', acc: '4028817702', tax: '1100700227702', st: 'ACTIVE' as const, depSt: 'VERIFIED' as const, dep: 10000, sup: 'SUP-10219', app: '2026-06-02T09:00:00+07:00' },
+  { code: 'TC-0457', name: 'ธนพล ขยันยิ่ง', bank: 'กรุงเทพ', acc: '1014883304', tax: '1100700333304', st: 'PENDING_DEPOSIT' as const, depSt: 'RECEIVED' as const, dep: 0, sup: null, app: '2026-11-08T09:00:00+07:00' },
+  { code: 'TC-0461', name: 'กิตติ พร้อมทำ', bank: 'กรุงไทย', acc: '0981225512', tax: '1100700445512', st: 'PENDING_DEPOSIT' as const, depSt: 'AWAITING' as const, dep: 0, sup: null, app: '2026-11-09T09:00:00+07:00' },
+  { code: 'TC-0088', name: 'ประเสริฐ มั่นคง', bank: 'กสิกรไทย', acc: '0129900921', tax: '1100700550921', st: 'ACTIVE' as const, depSt: 'VERIFIED' as const, dep: 10000, sup: 'SUP-10088', app: '2026-01-21T09:00:00+07:00' },
+  { code: 'TC-0145', name: 'มานพ เลิกงาน', bank: 'ออมสิน', acc: '0203346610', tax: '1100700666610', st: 'OFFBOARDING' as const, depSt: 'VERIFIED' as const, dep: 10000, sup: 'SUP-10145', app: '2026-04-11T09:00:00+07:00' },
+  { code: 'TC-0312', name: 'สุรชัย ทำจริง', bank: 'กรุงศรี', acc: '3017762290', tax: '1100700772290', st: 'ACTIVE' as const, depSt: 'VERIFIED' as const, dep: 10000, sup: 'SUP-10312', app: '2026-07-18T09:00:00+07:00' },
+  { code: 'TC-0188', name: 'วิชัย ช่างดี', bank: 'ทหารไทยธนชาต', acc: '2194408145', tax: '1100700888145', st: 'ACTIVE' as const, depSt: 'VERIFIED' as const, dep: 10000, sup: 'SUP-10188', app: '2026-05-05T09:00:00+07:00' },
+];
+
+let bootstrapped = false;
+
+export async function ensureBootstrapped(prisma: PrismaClient): Promise<void> {
+  if (bootstrapped || process.env.VITEST) return;
+  const userCount = await prisma.user.count();
+  if (userCount > 0) {
+    bootstrapped = true;
+    return;
+  }
+
+  const cfgRepo = new ConfigRepository(prisma);
+  await cfgRepo.getSystemSetting();
+  await cfgRepo.ensureDefaultJobRules();
+
+  const pwHash = hashPassword('demo-pass');
+  for (const u of STAFF_USERS) {
+    await prisma.user.upsert({
+      where: { email: u.email },
+      update: {},
+      create: { email: u.email, fullName: u.fullName, role: u.role, passwordHash: pwHash },
+    });
+  }
+
+  const { ENCRYPTION_KEY } = getEnv();
+  for (const t of INITIAL_TECHS) {
+    const created = await prisma.technician.create({
+      data: {
+        code: t.code,
+        fullName: t.name,
+        status: t.st,
+        depositStatus: t.depSt,
+        depositBalance: t.dep,
+        supplierCode: t.sup,
+        bankName: t.bank,
+        bankAccountEnc: encryptSensitive(t.acc, ENCRYPTION_KEY),
+        bankAccountMask: maskBankAccount(t.bank, t.acc),
+        taxIdEnc: encryptSensitive(t.tax, ENCRYPTION_KEY),
+        taxIdMask: maskTaxId(t.tax),
+        intApprovedAt: new Date(t.app),
+        offboardedAt: t.st === 'OFFBOARDING' ? new Date('2026-11-01T10:00:00+07:00') : null,
+      },
+    });
+
+    if (t.dep > 0) {
+      await prisma.depositTransaction.create({
+        data: {
+          technicianId: created.id,
+          kind: 'INITIAL',
+          amount: t.dep,
+          evidenceRef: `SLIP-${t.code}`,
+          verifiedAt: new Date(t.app),
+        },
+      });
+      await prisma.ledgerEntry.create({
+        data: {
+          technicianId: created.id,
+          entryType: 'DEPOSIT_IN',
+          referenceCode: `DEP-${t.code}`,
+          description: 'รับเงินค้ำประกันช่างแรกเข้า',
+          amount: t.dep,
+          balanceAfter: t.dep,
+        },
+      });
+    } else if (t.depSt === 'RECEIVED') {
+      await prisma.depositTransaction.create({
+        data: {
+          technicianId: created.id,
+          kind: 'INITIAL',
+          amount: 10000,
+          evidenceRef: `SLIP-${t.code}`,
+        },
+      });
+    }
+  }
+
+  await prisma.auditLog.create({
+    data: {
+      actorName: 'ระบบ',
+      actorRole: 'SYSTEM',
+      action: 'เริ่มต้นฐานข้อมูล BMT',
+      entityRef: 'SYSTEM',
+      oldValue: null,
+      newValue: 'สร้างผู้ใช้งาน 5 บทบาท และบัญชีช่างตัวอย่าง 8 ราย',
+    },
+  });
+
+  bootstrapped = true;
+}

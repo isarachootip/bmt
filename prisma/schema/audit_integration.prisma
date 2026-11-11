@@ -1,0 +1,43 @@
+enum ExternalSystem {
+  INT
+  CRM
+  ORACLE
+  LON
+}
+
+enum IntegrationDirection {
+  INBOUND
+  OUTBOUND
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  actorName   String
+  actorRole   String
+  actorUserId String?
+  action      String
+  entityRef   String
+  oldValue    String?
+  newValue    String
+  createdAt   DateTime @default(now())
+
+  @@index([entityRef])
+  @@index([createdAt])
+}
+
+model IntegrationLog {
+  id             String               @id @default(cuid())
+  targetSystem   ExternalSystem
+  direction      IntegrationDirection
+  endpoint       String
+  idempotencyKey String?
+  httpStatus     Int
+  requestBody    String
+  responseBody   String
+  attempt        Int                  @default(1)
+  success        Boolean
+  createdAt      DateTime             @default(now())
+
+  @@index([targetSystem, createdAt])
+  @@index([idempotencyKey])
+}

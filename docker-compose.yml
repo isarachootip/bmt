@@ -1,0 +1,22 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: bmt_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: bmt
+      POSTGRES_PASSWORD: bmt_secret
+      POSTGRES_DB: bmt_db
+      TZ: Asia/Bangkok
+    ports:
+      - "5439:5432"
+    volumes:
+      - bmt_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bmt -d bmt_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  bmt_pgdata:

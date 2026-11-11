@@ -1,0 +1,95 @@
+enum DbTechnicianStatus {
+  PENDING_DEPOSIT
+  ACTIVE
+  SUSPENDED
+  OFFBOARDING
+  CLOSED
+}
+
+enum DbDepositStatus {
+  AWAITING
+  RECEIVED
+  VERIFIED
+  PARTIAL_DEDUCTED
+  TOPUP_RECEIVED
+  REFUND_PENDING
+  REFUNDED
+}
+
+enum DepositTxKind {
+  INITIAL
+  TOPUP
+  CLAIM_DEDUCTION
+  REFUND
+}
+
+enum LedgerEntryType {
+  DEPOSIT_IN
+  DEPOSIT_TOPUP
+  CLAIM_DEDUCT_HOLD
+  CLAIM_DEDUCT_DEPOSIT
+  DEBT_RECORDED
+  DEBT_SETTLED
+  STAGE1_PAYOUT
+  STAGE2_PAYOUT
+  DEPOSIT_REFUND
+  MANUAL_ADJUSTMENT
+}
+
+model Technician {
+  id              String              @id @default(cuid())
+  code            String              @unique
+  fullName        String
+  status          DbTechnicianStatus  @default(PENDING_DEPOSIT)
+  supplierCode    String?
+  bankName        String
+  bankAccountEnc  String
+  bankAccountMask String
+  taxIdEnc        String
+  taxIdMask       String
+  depositBalance  Decimal             @default(0.00) @db.Decimal(12, 2)
+  depositStatus   DbDepositStatus     @default(AWAITING)
+  outstandingDebt Decimal             @default(0.00) @db.Decimal(12, 2)
+  intApprovedAt   DateTime
+  offboardedAt    DateTime?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  depositTxs      DepositTransaction[]
+  ledgerEntries   LedgerEntry[]
+  jobPayments     JobPayment[]
+  payableItems    PayableItem[]
+  warrantyClaims  WarrantyClaim[]
+}
+
+model DepositTransaction {
+  id           String        @id @default(cuid())
+  technicianId String
+  kind         DepositTxKind
+  amount       Decimal       @db.Decimal(12, 2)
+  evidenceRef  String?
+  recordedById String?
+  verifiedById String?
+  verifiedAt   DateTime?
+  note         String?
+  createdAt    DateTime      @default(now())
+
+  technician   Technician    @relation(fields: [technicianId], references: [id])
+
+  @@index([technicianId])
+}
+
+model LedgerEntry {
+  id            String          @id @default(cuid())
+  technicianId  String
+  entryType     LedgerEntryType
+  referenceCode String
+  description   String
+  amount        Decimal         @db.Decimal(12, 2)
+  balanceAfter  Decimal         @db.Decimal(12, 2)
+  createdAt     DateTime        @default(now())
+
+  technician    Technician      @relation(fields: [technicianId], references: [id])
+
+  @@index([technicianId, createdAt])
+}

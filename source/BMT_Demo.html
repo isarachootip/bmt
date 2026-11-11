@@ -1,0 +1,508 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BMT Demo – Technician Payment</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#0F172A;--muted:#475569;--line:#E2E8F0;--bg:#F6F7F9;--card:#fff;--pri:#1D4ED8;--pri-d:#1E3A8A;--nav:#0F172A;--nav2:#1E293B}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans Thai',Tahoma,system-ui,sans-serif}
+a{color:var(--pri)}a:hover{color:var(--pri-d)}
+button{font:inherit}
+.mono{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:13px}
+.app{display:flex;flex-wrap:wrap;min-height:100vh}
+.side{flex:1 1 236px;background:var(--nav);padding:20px 14px;display:flex;flex-direction:column;gap:4px}
+.brand{display:flex;align-items:center;gap:10px;padding:4px 8px 20px;color:#fff}
+.logo{width:36px;height:36px;border-radius:9px;background:var(--pri);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex:none}
+.side a{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;color:#CBD5E1;text-decoration:none;font-size:14px}
+.side a:hover{background:var(--nav2);color:#fff}
+.side a.on{background:var(--nav2);color:#fff;font-weight:600}
+.badge{margin-left:auto;border-radius:999px;padding:0 8px;font-size:12px;font-weight:700}
+.b-amb{background:#F59E0B;color:#111827}.b-red{background:#EF4444;color:#fff}
+.side .out{margin-top:24px;border-top:1px solid var(--nav2);border-radius:0;padding-top:16px}
+main{flex:999 1 560px;min-width:0;padding:28px 32px 48px;display:flex;flex-direction:column;gap:18px}
+h1{margin:0;font-size:26px;font-weight:700}
+h2{margin:0;font-size:17px;font-weight:600}
+.sub{margin:0;color:var(--muted);font-size:14px}
+.head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px}
+.head>div:first-child{display:flex;flex-direction:column;gap:4px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:14px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;gap:4px}
+.kpi .l{font-size:13px;color:var(--muted)}.kpi .v{font-size:26px;font-weight:700}.kpi .s{font-size:13px;color:var(--muted)}
+.kpi.bad{background:#FFF7F7;border-color:#FECACA}.kpi.bad .l,.kpi.bad .v{color:#991B1B}
+.row{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start}
+.grow3{flex:3 1 560px;min-width:0}.grow2{flex:2 1 360px;min-width:0}
+.tblwrap{background:#fff;border:1px solid var(--line);border-radius:12px;overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;font-weight:600;color:var(--muted);font-size:12.5px;padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:11px 12px;border-bottom:1px solid #EEF2F6;white-space:nowrap;vertical-align:middle}
+tr:last-child td{border-bottom:0}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+tr.sel{background:#EFF6FF;box-shadow:inset 3px 0 0 var(--pri)}
+tr.err{background:#FEF2F2}
+tfoot td{font-weight:700;background:#F8FAFC}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;font-size:12.5px;font-weight:600;white-space:nowrap}
+.p-wait{background:#FEF3C7;color:#92400E}.p-ok{background:#DCFCE7;color:#166534}.p-sent{background:#DBEAFE;color:#1E40AF}.p-fail{background:#FEE2E2;color:#991B1B}.p-hold{background:#EDE9FE;color:#5B21B6}.p-grey{background:#F1F5F9;color:#334155}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid #CBD5E1;background:#fff;color:var(--ink);border-radius:999px;padding:8px 14px;font-size:14px;cursor:pointer;min-height:40px}
+.chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.btn{border-radius:10px;padding:10px 18px;font-size:15px;font-weight:600;cursor:pointer;min-height:44px;border:1px solid transparent;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn-p{background:var(--pri);color:#fff;border-color:var(--pri)}.btn-p:hover{background:var(--pri-d);color:#fff}
+.btn-o{background:#fff;color:var(--ink);border-color:#94A3B8}
+.btn-d{background:#fff;color:#991B1B;border-color:#FCA5A5}
+.btn[disabled]{background:#CBD5E1;border-color:#CBD5E1;color:#334155;cursor:not-allowed}
+.btn-sm{border-radius:8px;padding:6px 12px;font-size:13px;font-weight:600;cursor:pointer;min-height:34px;background:#fff;border:1px solid #94A3B8;color:var(--ink)}
+.btn-sm.red{color:#991B1B;border-color:#FCA5A5}
+.linkbtn{background:none;border:0;padding:4px 0;color:var(--pri);cursor:pointer;text-decoration:underline;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:13px}
+.linkbtn.name{font-family:inherit;font-size:14px}
+input[type=checkbox],input[type=radio]{width:18px;height:18px;accent-color:var(--pri)}
+.field{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
+.field input,.field select,.field textarea{font:inherit;font-size:14px;color:var(--ink);border:1px solid #94A3B8;border-radius:10px;padding:10px 12px;background:#fff}
+.split{border:1px solid var(--line);border-radius:10px;overflow:hidden;font-size:14px}
+.split>div{display:flex;justify-content:space-between;gap:12px;padding:11px 14px}
+.split>div+div{border-top:1px solid var(--line)}
+.split .tot{background:#F8FAFC;font-weight:700}
+.tl{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px;font-size:13.5px}
+.tl li{display:flex;gap:10px}
+.dot{width:10px;height:10px;border-radius:50%;margin-top:6px;flex:none}
+.d-ok{background:#16A34A}.d-wait{background:#F59E0B}.d-grey{background:#CBD5E1}
+.q{color:var(--muted)}
+.bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-top:1px solid var(--line);background:#F8FAFC;border-radius:0 0 12px 12px}
+pre.code{margin:0;background:#0F172A;color:#E2E8F0;border-radius:10px;padding:14px;font-size:12.5px;line-height:1.6;overflow-x:auto}
+.chart{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:16px;align-items:end;height:190px;border-bottom:1px solid #CBD5E1;padding:0 4px}
+.chart>div{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12.5px;color:#334155}
+.chart i{display:block;width:100%;max-width:56px;border-radius:6px 6px 0 0;background:#93C5FD}
+.chart i.first{background:var(--pri)}
+.axis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:16px;font-size:13px;color:var(--muted);text-align:center}
+.toast{position:fixed;right:20px;bottom:20px;display:flex;flex-direction:column;gap:8px;z-index:20}
+.toast div{background:var(--ink);color:#fff;padding:12px 16px;border-radius:10px;font-size:14px;box-shadow:0 6px 20px rgba(15,23,42,.25);max-width:360px}
+.crumb{font-size:14px;color:var(--muted)}
+.check li{display:flex;gap:10px;font-size:14px}
+.ok{color:#166534;font-weight:700}.no{color:#991B1B;font-weight:700}.warn{color:#92400E;font-weight:700}
+.tabs{display:flex;gap:24px;padding:0 20px;border-bottom:1px solid var(--line)}
+.tab{border:0;background:none;font-size:15px;padding:12px 2px;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;min-height:44px}
+.tab.on{color:var(--ink);font-weight:600;border-bottom-color:var(--pri)}
+.demo{background:#FEF3C7;color:#78350F;font-size:13px;padding:8px 32px;text-align:center}
+/* login */
+.login{display:flex;flex-wrap:wrap;min-height:100vh;background:#fff}
+.login>section{flex:1 1 420px;padding:56px;display:flex}
+.login .hero{background:var(--nav);color:#fff;flex-direction:column;justify-content:space-between;gap:40px}
+.login .form{align-items:center;justify-content:center}
+/* phone */
+.phone{width:390px;max-width:100%;height:800px;border-radius:36px;border:10px solid #0F172A;overflow:hidden;display:flex;flex-direction:column;background:var(--bg);margin:0 auto;box-shadow:0 20px 50px rgba(15,23,42,.18)}
+.seg{display:flex;gap:4px;margin:14px 16px 6px;background:#E2E8F0;border-radius:10px;padding:4px}
+.seg button{flex:1;border:0;background:none;font-size:14px;padding:10px 0;border-radius:8px;cursor:pointer;color:#334155}
+.seg button.on{background:#fff;color:var(--ink);font-weight:600;box-shadow:0 1px 2px rgba(15,23,42,.12)}
+@media (max-width:720px){main{padding:20px 16px 40px}.side{flex-basis:100%;flex-direction:row;flex-wrap:nowrap;overflow-x:auto;padding:10px}.brand{padding:0 8px 0 0}.brand .t{display:none}.side a{white-space:nowrap}.side .out{margin:0;border:0;padding:10px 12px}.login>section{padding:28px}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div class="toast" id="toast" aria-live="polite"></div>
+<script>
+// ---------- Config & data (ข้อมูลตัวอย่าง) ----------
+const CFG = { p1: 90, p2: 10, deposit: 10000 };
+const TODAY = new Date(2026, 10, 10); // 10/11/2026
+const fmt = n => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const split = t => { const a = Math.round(t * CFG.p1) / 100; return [a, Math.round((t - a) * 100) / 100]; };
+const pd = s => { const [d, m, y] = s.split('/').map(Number); return new Date(y, m - 1, d); };
+const daysTo = s => Math.round((pd(s) - TODAY) / 864e5);
+const now = () => { const d = new Date(); return '10/11/2026 ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') + ':' + String(d.getSeconds()).padStart(2, '0') + ' น.'; };
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+const techs = [
+  { id: 'TC-0102', name: 'สมชาย ใจดี', st: 'ACTIVE', dep: 10000, app: '14/03/2026', bank: 'กสิกรไทย ••• 4821', sup: 'SUP-10231' },
+  { id: 'TC-0219', name: 'อนุชา รักงาน', st: 'ACTIVE', dep: 10000, app: '02/06/2026', bank: 'ไทยพาณิชย์ ••• 7702', sup: 'SUP-10307' },
+  { id: 'TC-0457', name: 'ธนพล ขยันยิ่ง', st: 'VERIFY', dep: 10000, app: '08/11/2026', bank: 'กรุงเทพ ••• 3304', sup: 'รอสร้าง' },
+  { id: 'TC-0461', name: 'กิตติ พร้อมทำ', st: 'PENDING', dep: 0, app: '09/11/2026', bank: 'กรุงไทย ••• 5512', sup: 'รอสร้าง' },
+  { id: 'TC-0088', name: 'ประเสริฐ มั่นคง', st: 'ACTIVE', dep: 10000, app: '21/01/2026', bank: 'กสิกรไทย ••• 0921', sup: 'SUP-10094' },
+  { id: 'TC-0145', name: 'มานพ เลิกงาน', st: 'OFFBOARD', dep: 10000, app: '11/04/2026', bank: 'ออมสิน ••• 6610', sup: 'SUP-10166' },
+  { id: 'TC-0312', name: 'สุรชัย ทำจริง', st: 'ACTIVE', dep: 10000, app: '18/07/2026', bank: 'กรุงศรี ••• 2290', sup: 'SUP-10412' },
+  { id: 'TC-0188', name: 'วิชัย ช่างดี', st: 'ACTIVE', dep: 10000, app: '05/05/2026', bank: 'ทหารไทยธนชาต ••• 8145', sup: 'SUP-10188' }
+];
+const TST = { ACTIVE: ['ACTIVE', 'p-ok'], VERIFY: ['รอ Finance ยืนยัน', 'p-sent'], PENDING: ['รอวางเงิน', 'p-wait'], OFFBOARD: ['รอคืนเงิน', 'p-grey'] };
+
+// s1 = งวดแรก 90% · s2 = เงิน hold 10%
+const jobs = [
+  ['BK-2611-00418', 'TC-0102', 'R · ห้องครัว / 2.3 ระบบไฟ', 2000, '10/11/2026', '10/02/2027', 'WAIT', 'RETAINED'],
+  ['BK-2611-00402', 'TC-0219', 'Q · ติดตั้งเครื่องทำน้ำอุ่น', 1200, '10/11/2026', '10/12/2026', 'WAIT', 'RETAINED'],
+  ['BK-2611-00399', 'TC-0188', 'Q · ซ่อมก๊อกน้ำ', 800, '10/11/2026', '10/12/2026', 'WAIT', 'RETAINED'],
+  ['BK-2611-00391', 'TC-0088', 'R · ห้องรับแขก / 1.2 ปูกระเบื้อง', 8500, '09/11/2026', '09/02/2027', 'WAIT', 'RETAINED'],
+  ['BK-2611-00388', 'TC-0312', 'R · ห้องครัว / 2.2 ปูพื้นยาง', 4600, '09/11/2026', '09/02/2027', 'WAIT', 'RETAINED'],
+  ['BK-2611-00384', 'TC-0219', 'Q · ติดตั้งเครื่องทำน้ำอุ่น', 1200, '09/11/2026', '09/12/2026', 'FAIL', 'RETAINED'],
+  ['BK-2611-00379', 'TC-0312', 'R · ห้องน้ำ / 3.2 ระบบน้ำ', 3400, '09/11/2026', '09/02/2027', 'FAIL', 'RETAINED'],
+  ['BK-2611-00360', 'TC-0102', 'R · ห้องรับแขก / 1.2 ปูกระเบื้อง', 4600, '06/11/2026', '06/02/2027', 'PAID', 'RETAINED'],
+  ['BK-2608-00122', 'TC-0088', 'R · ห้องรับแขก / 1.2 ปูกระเบื้อง', 8500, '08/08/2026', '08/11/2026', 'PAID', 'DUE'],
+  ['BK-2608-00117', 'TC-0188', 'Q · เปลี่ยนสวิตช์ไฟ', 600, '07/08/2026', '07/11/2026', 'PAID', 'DUE'],
+  ['BK-2609-00211', 'TC-0102', 'R · ห้องน้ำ / 1.1 รื้อถอน', 3000, '11/08/2026', '11/11/2026', 'PAID', 'HOLD'],
+  ['BK-2608-00140', 'TC-0312', 'Q · ติดตั้งพัดลมเพดาน', 1100, '14/08/2026', '14/11/2026', 'PAID', 'RETAINED'],
+  ['BK-2608-00152', 'TC-0219', 'R · ห้องครัว / 2.3 ระบบไฟ', 4900, '20/08/2026', '20/11/2026', 'PAID', 'RETAINED'],
+  ['BK-2609-00163', 'TC-0088', 'R · ห้องนอน / 4.1 ทาสี', 6800, '02/09/2026', '02/12/2026', 'PAID', 'RETAINED'],
+  ['BK-2609-00188', 'TC-0145', 'R · ห้องน้ำ / 3.1 ปูกระเบื้อง', 4500, '05/09/2026', '05/12/2026', 'PAID', 'RETAINED'],
+  ['BK-2605-00314', 'TC-0145', 'R · ห้องครัว / 2.1 รื้อถอน', 5400, '28/05/2026', '28/08/2026', 'PAID', 'PAID']
+].map(([id, tech, job, total, closed, wend, s1, s2]) => ({ id, tech, job, total, closed, wend, s1, s2, tries: s1 === 'FAIL' ? 3 : 0 }));
+const S1 = { WAIT: ['รออนุมัติ', 'p-wait'], SENT: ['ส่ง Oracle แล้ว', 'p-sent'], PAID: ['จ่ายแล้ว', 'p-ok'], FAIL: ['SYNC_FAILED', 'p-fail'] };
+const S2 = { RETAINED: ['HOLD 10% · อยู่ในประกัน', 'p-grey'], HOLD: ['ระงับ · มีเคลม', 'p-hold'], DUE: ['พ้นประกัน · DUE', 'p-sent'], SENT: ['ส่ง Oracle แล้ว', 'p-sent'], PAID: ['จ่ายแล้ว', 'p-ok'] };
+
+const events = [
+  { t: '17:24 น.', id: 'BK-2611-00431', task: '2.3 ระบบไฟ', tech: 'TC-0461', total: 3200, qc: ['ผ่าน · 5', 'p-ok'], by: 'นภา ใส่ใจ', res: ['ปฏิเสธ · ช่างยังไม่ ACTIVE', 'p-fail'], why: 'ช่าง TC-0461 สถานะรอวางเงินค้ำประกัน' },
+  { t: '17:11 น.', id: 'BK-2611-00429', task: 'Q · ติดตั้งก๊อก', tech: 'TC-0188', total: 900, qc: ['ผ่าน · 1 (rework)', 'p-ok'], by: 'สุดา ดูแล', res: ['สร้างรายการจ่ายแล้ว', 'p-ok'] },
+  { t: '16:58 น.', id: 'BK-2611-00418', task: '2.3 ระบบไฟ', tech: 'TC-0102', total: 2000, qc: ['ผ่าน · 5', 'p-ok'], by: 'นภา ใส่ใจ', res: ['ส่งซ้ำ · อัปเดตแล้ว', 'p-grey'] },
+  { t: '16:40 น.', id: 'BK-2611-00425', task: '1.2 ปูกระเบื้อง', tech: 'TC-0088', total: 5400, qc: ['ESCALATED', 'p-wait'], by: 'สุดา ดูแล', res: ['ปฏิเสธ · QC ยังไม่ผ่าน', 'p-fail'], why: 'Task อยู่ในสถานะ ESCALATED (rework ครบ 5 รอบ)' },
+  { t: '16:22 น.', id: 'BK-2611-00422', task: 'Q · ซ่อมปั๊มน้ำ', tech: 'TC-0219', total: 1500, qc: ['ผ่าน · 5', 'p-ok'], by: 'นภา ใส่ใจ', res: ['สร้างรายการจ่ายแล้ว', 'p-ok'] },
+  { t: '15:57 น.', id: 'BK-2611-00420', task: '3.1 รื้อถอน', tech: 'TC-0312', total: 2800, qc: ['ผ่าน · 5', 'p-ok'], by: 'สุดา ดูแล', res: ['สร้างรายการจ่ายแล้ว', 'p-ok'] }
+];
+
+const audit = [
+  ['10/11/2026 10:02:15 น.', ['ระบบ', 'p-grey'], 'คำนวณงวด 90/10', 'BK-2611-00418', 'ค่างาน 2,000.00 → จ่ายทันที 1,800.00 · hold 200.00 · พ้นประกัน 10/02/2027'],
+  ['10/11/2026 10:02:14 น.', ['CRM API', 'p-hold'], 'รับ Close Job', 'BK-2611-00418 · Task 2.3', '– → CALCULATED · ยืนยันโดย napa.s'],
+  ['10/11/2026 10:21:14 น.', ['Oracle API', 'p-hold'], 'ส่ง Payment Request', 'BK-2611-00384 · งวด 1', 'ครั้งที่ 3/3 · HTTP 503 → SYNC_FAILED'],
+  ['09/11/2026 16:02:51 น.', ['วรรณา (Finance)', 'p-sent'], 'แก้ไขข้อมูลช่าง', 'TC-0102', 'บัญชีธนาคาร ••• 1190 → ••• 4821'],
+  ['08/11/2026 06:00:02 น.', ['ระบบ', 'p-grey'], 'Scheduler เงิน hold', 'BK-2608-00122 · งวด 2', 'RETAINED → DUE']
+];
+const log = (who, act, ref, chg) => audit.unshift([now(), who, act, ref, chg]);
+
+// ---------- State ----------
+const st = { tab: 'p1', sel: 'BK-2611-00418', checked: { 'BK-2611-00418': true, 'BK-2611-00402': true }, techFilter: 'ALL', techSel: 'TC-0457', retFilter: 'SOON', evSel: 'BK-2611-00431', oraFilter: 'FAIL', stmtTab: 'ALL', auditQ: '', rep: 'tech' };
+const T = id => techs.find(t => t.id === id);
+const J = id => jobs.find(j => j.id === id);
+const pill = ([l, c]) => `<span class="pill ${c}">${esc(l)}</span>`;
+function toast(msg) { const el = document.createElement('div'); el.textContent = msg; document.getElementById('toast').appendChild(el); setTimeout(() => el.remove(), 3200); }
+
+// ---------- Layout ----------
+const NAV = [['dashboard', 'Dashboard'], ['closejobs', 'รับ Close Job'], ['approvals', 'คิวอนุมัติจ่าย', 'amb'], ['technicians', 'บัญชีช่าง & เงินค้ำประกัน'], ['retention', 'เงิน hold 10% รอปล่อย'], ['oracle', 'ส่ง Oracle', 'red'], ['reports', 'รายงาน'], ['audit', 'Audit log'], ['settings', 'ตั้งค่า'], ['statement', 'Statement ช่าง (มือถือ)']];
+function shell(route, body) {
+  const cnt = { approvals: jobs.filter(j => j.s1 === 'WAIT').length + jobs.filter(j => j.s2 === 'DUE').length, oracle: jobs.filter(j => j.s1 === 'FAIL').length };
+  const active = route === 'techdetail' ? 'technicians' : route;
+  return `<div class="demo">โหมด Demo · ข้อมูลตัวอย่าง · กติกา: จ่ายทันที ${CFG.p1}% / hold ${CFG.p2}% จนพ้นประกัน · วันที่ระบบ 10/11/2026</div>
+  <div class="app"><nav class="side" aria-label="เมนูหลัก">
+    <div class="brand"><div class="logo">BMT</div><div class="t" style="display:flex;flex-direction:column"><span style="font-weight:600;font-size:15px">Builder Mgmt</span><span style="color:#94A3B8;font-size:12px">Technician Payment</span></div></div>
+    ${NAV.map(([r, l, b]) => `<a href="#/${r}" class="${active === r ? 'on' : ''}">${esc(l)}${b && cnt[r] ? `<span class="badge b-${b}">${cnt[r]}</span>` : ''}</a>`).join('')}
+    <a href="#/login" class="out">ออกจากระบบ · วรรณา (Finance)</a>
+  </nav><main>${body}</main></div>`;
+}
+
+// ---------- Screens ----------
+const V = {};
+V.login = () => `<div class="login">
+  <section class="hero"><div style="display:flex;align-items:center;gap:12px"><div class="logo" style="width:44px;height:44px">BMT</div><span style="font-size:18px;font-weight:600">Builder Management</span></div>
+  <div style="display:flex;flex-direction:column;gap:16px;max-width:460px"><h1 style="font-size:40px;line-height:1.25">ทำจ่ายช่างครบ ตรวจสอบได้ทุกบาท</h1><p style="margin:0;font-size:16px;color:#CBD5E1;line-height:1.6">เงินค้ำประกัน ${fmt(CFG.deposit)} บาท · จ่าย ${CFG.p1}% เมื่อปิดงาน · ปล่อยเงิน hold ${CFG.p2}% เมื่อพ้นประกัน — อนุมัติใน BMT แล้วส่ง Oracle โดยตรง</p></div>
+  <span style="font-size:13px;color:#94A3B8">ระบบภายในสำหรับ Finance, Approver และ Admin</span></section>
+  <section class="form"><form style="width:100%;max-width:380px;display:flex;flex-direction:column;gap:18px" onsubmit="event.preventDefault();location.hash='#/dashboard'">
+    <div><h2 style="font-size:26px;font-weight:700">เข้าสู่ระบบ</h2><p class="sub">ใช้บัญชีพนักงานบริษัท</p></div>
+    <button type="submit" class="btn btn-o">เข้าสู่ระบบด้วย SSO บริษัท</button>
+    <div style="display:flex;align-items:center;gap:12px;color:var(--muted);font-size:13px"><span style="flex:1;height:1px;background:var(--line)"></span>หรือ<span style="flex:1;height:1px;background:var(--line)"></span></div>
+    <label class="field">อีเมลพนักงาน<input type="email" value="wanna@company.co.th" autocomplete="username"></label>
+    <label class="field">รหัสผ่าน<input type="password" value="demo-pass" autocomplete="current-password"></label>
+    <button type="submit" class="btn btn-p">เข้าสู่ระบบ</button>
+  </form></section></div>`;
+
+V.dashboard = () => {
+  const w1 = jobs.filter(j => j.s1 === 'WAIT'), due = jobs.filter(j => j.s2 === 'DUE'), fail = jobs.filter(j => j.s1 === 'FAIL'), paid = jobs.filter(j => j.s1 === 'PAID');
+  const held = jobs.filter(j => ['RETAINED', 'HOLD', 'DUE'].includes(j.s2));
+  const sum = (a, k) => a.reduce((s, j) => s + split(j.total)[k], 0);
+  const months = [['ธ.ค. 26', 0], ['ม.ค. 27', 0], ['ก.พ. 27', 0], ['มี.ค. 27', 0], ['เม.ย. 27', 0], ['พ.ค. 27', 0]];
+  held.forEach(j => { const d = pd(j.wend); const i = (d.getFullYear() - 2026) * 12 + d.getMonth() - 11; if (i >= 0 && i < 6) months[i][1] += split(j.total)[1]; else if (i < 0) months[0][1] += split(j.total)[1]; });
+  const mx = Math.max(...months.map(m => m[1]), 1);
+  const ac = techs.filter(t => t.st === 'ACTIVE').length;
+  const recent = jobs.slice(0, 8);
+  return `<div class="head"><div><h1>Dashboard การเงินช่าง</h1><p class="sub">ข้อมูล ณ 10/11/2026</p></div>
+    <div class="chips"><span class="pill p-ok">● CRM ปกติ</span><span class="pill p-ok">● INT ปกติ</span>${fail.length ? `<span class="pill p-fail">▲ Oracle ค้าง ${fail.length} รายการ</span>` : '<span class="pill p-ok">● Oracle ปกติ</span>'}</div></div>
+  <section class="kpis">
+    <a class="kpi" href="#/approvals" style="text-decoration:none;color:inherit"><span class="l">รออนุมัติ งวดแรก (${CFG.p1}%)</span><span class="v">${w1.length} <span style="font-size:14px;font-weight:500" class="q">รายการ</span></span><span>฿${fmt(sum(w1, 0))}</span></a>
+    <a class="kpi" href="#/approvals" style="text-decoration:none;color:inherit"><span class="l">รออนุมัติ ปล่อยเงิน hold (${CFG.p2}%)</span><span class="v">${due.length} <span style="font-size:14px;font-weight:500" class="q">รายการ</span></span><span>฿${fmt(sum(due, 1))}</span></a>
+    <div class="kpi"><span class="l">จ่ายงวดแรกแล้ว</span><span class="v">${paid.length} <span style="font-size:14px;font-weight:500" class="q">รายการ</span></span><span>฿${fmt(sum(paid, 0))}</span></div>
+    <a class="kpi ${fail.length ? 'bad' : ''}" href="#/oracle" style="text-decoration:none;color:inherit"><span class="l">ส่ง Oracle ไม่สำเร็จ</span><span class="v">${fail.length} <span style="font-size:14px;font-weight:500">รายการ</span></span><span style="font-weight:600">${fail.length ? 'ส่งซ้ำ →' : 'ไม่มีค้าง'}</span></a>
+  </section>
+  <div class="row">
+    <section class="card" style="flex:2 1 520px;min-width:0"><div class="head"><h2>เงิน hold ${CFG.p2}% ค้างปล่อย ตามเดือนพ้นประกัน</h2><span class="q" style="font-size:13px">รวม ฿${fmt(held.reduce((s, j) => s + split(j.total)[1], 0))}</span></div>
+      <div class="chart" role="img" aria-label="ยอดเงิน hold รายเดือน">${months.map((m, i) => `<div><span>${fmt(m[1]).replace('.00', '')}</span><i class="${i === 0 ? 'first' : ''}" style="height:${Math.max(4, m[1] / mx * 150)}px"></i></div>`).join('')}</div>
+      <div class="axis">${months.map((m, i) => `<span style="${i === 0 ? 'font-weight:600;color:var(--ink)' : ''}">${m[0]}${i === 0 ? '*' : ''}</span>`).join('')}</div>
+      <span class="q" style="font-size:12.5px">* ธ.ค. รวมรายการที่พ้นประกันแล้วและยังไม่ได้ปล่อย</span></section>
+    <section class="card" style="flex:1 1 280px;min-width:0"><h2>เงินค้ำประกันช่าง</h2>
+      <div><span class="q" style="font-size:13px">ยอดค้ำประกันรวม</span><div style="font-size:26px;font-weight:700">฿${fmt(techs.reduce((s, t) => s + t.dep, 0))}</div></div>
+      ${Object.entries(TST).map(([k, v]) => `<div style="display:flex;justify-content:space-between;font-size:14px">${pill(v)}<span>${techs.filter(t => t.st === k).length} คน</span></div>`).join('')}
+      <a href="#/technicians" style="font-weight:600;font-size:14px">ดูบัญชีช่างทั้งหมด →</a></section>
+  </div>
+  <section class="card"><div class="head"><h2>รายการจ่ายล่าสุด</h2><a href="#/approvals" style="font-size:14px;font-weight:600">ไปที่คิวอนุมัติ →</a></div>
+  <div style="overflow-x:auto"><table><thead><tr><th>Booking No.</th><th>ช่าง</th><th>งาน</th><th class="num">ค่างาน</th><th class="num">งวดแรก ${CFG.p1}%</th><th>สถานะงวดแรก</th><th>เงิน hold ${CFG.p2}%</th></tr></thead><tbody>
+  ${recent.map(j => `<tr><td class="mono">${j.id}</td><td>${T(j.tech).name}</td><td>${j.job}</td><td class="num">${fmt(j.total)}</td><td class="num">${fmt(split(j.total)[0])}</td><td>${pill(S1[j.s1])}</td><td>${pill(S2[j.s2])}</td></tr>`).join('')}
+  </tbody></table></div></section>`;
+};
+
+V.closejobs = () => {
+  const e = events.find(x => x.id === st.evSel) || events[0];
+  const counts = { ok: events.filter(x => x.res[1] === 'p-ok').length, dup: events.filter(x => x.res[1] === 'p-grey').length, rej: events.filter(x => x.res[1] === 'p-fail').length };
+  return `<div class="head"><div><h1>รับ Close Job จาก CRM</h1><p class="sub">event ที่ Cust-Sat ยืนยันหลัง QC ผ่าน · ระบบตรวจแล้วสร้างรายการจ่ายอัตโนมัติ</p></div><button class="btn btn-o" data-act="refresh">ดึงข้อมูลใหม่</button></div>
+  <section class="kpis"><div class="kpi"><span class="l">รับวันนี้</span><span class="v">${events.length}</span></div><div class="kpi"><span class="l">สร้างรายการจ่ายแล้ว</span><span class="v" style="color:#166534">${counts.ok}</span></div><div class="kpi"><span class="l">ส่งซ้ำ (อัปเดต ไม่สร้างใหม่)</span><span class="v">${counts.dup}</span></div><div class="kpi ${counts.rej ? 'bad' : ''}"><span class="l">ปฏิเสธ · ต้องตรวจสอบ</span><span class="v">${counts.rej}</span></div></section>
+  <div class="row"><section class="tblwrap grow3"><table><thead><tr><th>รับเมื่อ</th><th>Booking / Task</th><th>ช่าง</th><th class="num">ค่างาน</th><th>QC</th><th>Cust-Sat</th><th>ผลตรวจ</th></tr></thead><tbody>
+  ${events.map(x => `<tr class="${x.id === e.id ? 'sel' : ''}"><td>${x.t}</td><td><button class="linkbtn" data-act="ev" data-id="${x.id}">${x.id}</button><br><span class="q" style="font-size:12.5px">${x.task}</span></td><td>${T(x.tech).name}</td><td class="num">${fmt(x.total)}</td><td>${pill(x.qc)}</td><td>${x.by}</td><td>${pill(x.res)}</td></tr>`).join('')}
+  </tbody></table></section>
+  <aside class="card grow2"><div><span class="mono q">${e.id} · ${e.task}</span><div style="font-size:18px;font-weight:700">${esc(e.res[0])}</div></div>
+    <ul class="tl check" style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px">
+      <li><span class="ok">✓</span>Booking และ Task ตรงกับ PMT</li>
+      <li><span class="${e.qc[1] === 'p-ok' ? 'ok">✓' : 'no">✕'}</span>QC สถานะ ${e.qc[1] === 'p-ok' ? 'PASSED' : esc(e.qc[0])}</li>
+      <li><span class="ok">✓</span>Cust-Sat ยืนยันแล้ว (${e.by})</li>
+      <li><span class="${T(e.tech).st === 'ACTIVE' ? 'ok">✓' : 'no">✕'}</span>ช่าง ${e.tech} สถานะ ${TST[T(e.tech).st][0]}</li></ul>
+    ${e.res[1] === 'p-ok' || e.res[1] === 'p-grey' ? `<div class="split"><div><span>ค่างาน</span><b>฿${fmt(e.total)}</b></div><div><span>งวดแรก ${CFG.p1}%</span><b>฿${fmt(split(e.total)[0])}</b></div><div><span>hold ${CFG.p2}%</span><b>฿${fmt(split(e.total)[1])}</b></div></div>` : ''}
+    <div style="display:flex;flex-direction:column;gap:6px"><span class="q" style="font-size:13px;font-weight:600">Raw payload จาก CRM</span><pre class="code mono">{
+  "booking_no": "${e.id}",
+  "task": "${e.task}",
+  "technician_id": "${e.tech}",
+  "amount": ${e.total.toFixed(2)},
+  "qc_status": "${e.qc[1] === 'p-ok' ? 'PASSED' : e.qc[0]}",
+  "confirmed_by": "${e.by}"
+}</pre></div>
+    ${e.res[1] === 'p-fail' ? `<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-o" data-act="recheck" data-id="${e.id}" style="flex:1 1 140px">ตรวจซ้ำอีกครั้ง</button>${e.why.includes('ช่าง') ? `<a href="#/technicians" class="btn btn-p" style="flex:1 1 140px">ไปที่บัญชีช่าง</a>` : ''}</div><p class="sub" style="font-size:13px">${esc(e.why)}</p>` : ''}
+  </aside></div>`;
+};
+
+V.approvals = () => {
+  const lists = { p1: jobs.filter(j => j.s1 === 'WAIT'), p2: jobs.filter(j => j.s2 === 'DUE') };
+  const shown = lists[st.tab];
+  const amt = j => st.tab === 'p1' ? split(j.total)[0] : split(j.total)[1];
+  let d = J(st.sel); if (!d || !shown.includes(d)) d = shown[0];
+  const chosen = shown.filter(j => st.checked[j.id]);
+  const all = shown.length && shown.every(j => st.checked[j.id]);
+  const [a, b] = d ? split(d.total) : [0, 0];
+  return `<div class="head"><div><h1>คิวอนุมัติจ่าย</h1><p class="sub">อนุมัติใน BMT แล้วส่งอนุมัติจ่ายที่ Oracle ทันที — ไม่ต้องออก IPO</p></div><span class="q" style="font-size:13px">ผู้ใช้: วรรณา (Finance) · ผู้อนุมัติ: สมพร</span></div>
+  <div class="chips" role="group" aria-label="งวด"><button class="chip ${st.tab === 'p1' ? 'on' : ''}" data-act="tab" data-id="p1">งวดแรก · ${CFG.p1}% (${lists.p1.length})</button><button class="chip ${st.tab === 'p2' ? 'on' : ''}" data-act="tab" data-id="p2">ปล่อยเงิน hold · ${CFG.p2}% (${lists.p2.length})</button><a class="chip" href="#/oracle" style="text-decoration:none">ส่ง Oracle ไม่สำเร็จ (${jobs.filter(j => j.s1 === 'FAIL').length})</a></div>
+  ${shown.length ? `<div class="row"><section class="grow3" style="background:#fff;border:1px solid var(--line);border-radius:12px;display:flex;flex-direction:column">
+    <div style="overflow-x:auto"><table><thead><tr><th><input type="checkbox" aria-label="เลือกทั้งหมด" data-act="all" ${all ? 'checked' : ''}></th><th>Booking No.</th><th>ช่าง</th><th>งาน</th><th class="num">ค่างาน</th><th class="num">ยอดจ่ายงวดนี้</th><th>สถานะ</th></tr></thead><tbody>
+    ${shown.map(j => `<tr class="${d && j.id === d.id ? 'sel' : ''}"><td><input type="checkbox" aria-label="เลือก ${j.id}" data-act="chk" data-id="${j.id}" ${st.checked[j.id] ? 'checked' : ''}></td><td><button class="linkbtn" data-act="sel" data-id="${j.id}">${j.id}</button></td><td>${T(j.tech).name}</td><td>${j.job}</td><td class="num">${fmt(j.total)}</td><td class="num" style="font-weight:600">${fmt(amt(j))}</td><td>${pill(st.tab === 'p1' ? S1[j.s1] : S2[j.s2])}</td></tr>`).join('')}
+    </tbody></table></div>
+    <div class="bar"><span style="font-size:14px">เลือกแล้ว <b>${chosen.length}</b> รายการ · รวม <b>฿${fmt(chosen.reduce((s, j) => s + amt(j), 0))}</b></span><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-d" data-act="reject" ${chosen.length ? '' : 'disabled'}>ปฏิเสธ</button><button class="btn btn-p" data-act="approve" ${chosen.length ? '' : 'disabled'}>อนุมัติและส่ง Oracle (${chosen.length})</button></div></div></section>
+  <aside class="card grow2"><div style="display:flex;justify-content:space-between;gap:12px"><div><span class="mono q">${d.id}</span><div style="font-size:18px;font-weight:700">${d.job}</div><span class="q" style="font-size:14px">ช่าง ${T(d.tech).name} · Supplier ${T(d.tech).sup}</span></div>${pill(st.tab === 'p1' ? S1[d.s1] : S2[d.s2])}</div>
+    <div class="split"><div class="tot"><span>ค่างานรวม (จาก Close Job)</span><span>฿${fmt(d.total)}</span></div><div style="${st.tab === 'p1' ? 'background:#EFF6FF' : ''}"><span>งวดแรก · จ่ายเมื่อปิดงาน (${CFG.p1}%)</span><b>฿${fmt(a)}</b></div><div style="${st.tab === 'p2' ? 'background:#EFF6FF' : ''}"><span>เงิน hold (${CFG.p2}%)<br><span class="q" style="font-size:13px">ปล่อยเมื่อพ้นประกัน ${d.wend}</span></span><b>฿${fmt(b)}</b></div></div>
+    <div style="display:flex;flex-direction:column;gap:10px"><h2 style="font-size:15px">ที่มาของรายการ</h2><ul class="tl">
+      <li><span class="dot d-ok"></span><span>QC ผ่านใน PMT<br><span class="q">${d.closed} · ทุก Task ผ่าน</span></span></li>
+      <li><span class="dot d-ok"></span><span>Cust-Sat ยืนยัน Close Job ใน CRM<br><span class="q">${d.closed}</span></span></li>
+      ${st.tab === 'p2' ? `<li><span class="dot d-ok"></span><span>จ่ายงวดแรกแล้ว ฿${fmt(a)}</span></li><li><span class="dot d-ok"></span><span>พ้นประกัน ${d.wend} · ไม่มีเคลมค้าง</span></li>` : `<li><span class="dot d-ok"></span><span>BMT คำนวณ ${CFG.p1}/${CFG.p2}</span></li>`}
+      <li><span class="dot d-wait"></span><span><b>รออนุมัติใน BMT</b><br><span class="q">จากนั้นส่ง Oracle อัตโนมัติ</span></span></li></ul></div>
+    <label class="field" style="font-weight:600;color:var(--ink)">หมายเหตุผู้อนุมัติ<textarea id="note" rows="2" placeholder="ระบุเหตุผลเมื่อปฏิเสธ"></textarea></label>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-d" style="flex:1 1 120px" data-act="reject1" data-id="${d.id}">ปฏิเสธ</button><button class="btn btn-p" style="flex:2 1 200px" data-act="approve1" data-id="${d.id}">อนุมัติและส่ง Oracle</button></div>
+  </aside></div>` : `<div class="card" style="align-items:center;text-align:center;padding:48px"><h2>ไม่มีรายการรออนุมัติในแท็บนี้</h2><p class="sub">รายการที่อนุมัติแล้วดูได้ที่หน้า "ส่ง Oracle"</p><a class="btn btn-o" href="#/oracle">ไปที่ส่ง Oracle</a></div>`}`;
+};
+
+V.technicians = () => {
+  const f = st.techFilter, list = techs.filter(t => f === 'ALL' || t.st === f);
+  const t = T(st.techSel) || techs[0];
+  const held = id => jobs.filter(j => j.tech === id && ['RETAINED', 'HOLD', 'DUE'].includes(j.s2)).reduce((s, j) => s + split(j.total)[1], 0);
+  return `<div class="head"><div><h1>บัญชีช่าง &amp; เงินค้ำประกัน</h1><p class="sub">ช่างที่ Approve ใน INT ต้องวางเงินค้ำประกันครบ ฿${fmt(CFG.deposit)} และ Finance ยืนยัน ก่อน INT จะจ่ายงานให้</p></div></div>
+  <div class="chips">${[['ALL', 'ทั้งหมด']].concat(Object.entries(TST).map(([k, v]) => [k, v[0]])).map(([k, l]) => `<button class="chip ${f === k ? 'on' : ''}" data-act="tf" data-id="${k}">${l} (${k === 'ALL' ? techs.length : techs.filter(x => x.st === k).length})</button>`).join('')}</div>
+  <div class="row"><section class="tblwrap grow3"><table><thead><tr><th>ช่าง</th><th>Technician ID</th><th>สถานะ</th><th class="num">เงินค้ำประกัน</th><th class="num">เงิน hold ${CFG.p2}% รอปล่อย</th><th>Approve ใน INT</th></tr></thead><tbody>
+  ${list.map(x => `<tr class="${x.id === t.id ? 'sel' : ''}"><td><button class="linkbtn name" data-act="tsel" data-id="${x.id}">${x.name}</button></td><td class="mono">${x.id}</td><td>${pill(TST[x.st])}</td><td class="num">${fmt(x.dep)}</td><td class="num">${fmt(held(x.id))}</td><td>${x.app}</td></tr>`).join('')}
+  </tbody></table></section>
+  <aside class="card grow2"><div style="display:flex;justify-content:space-between;gap:12px"><div><div style="font-size:18px;font-weight:700">${t.name}</div><span class="q" style="font-size:14px"><span class="mono">${t.id}</span> · Supplier ${t.sup}</span></div>${pill(TST[t.st])}</div>
+    <div style="display:flex;flex-direction:column;gap:8px"><div style="display:flex;justify-content:space-between;font-size:14px"><span>เงินค้ำประกันที่ต้องวาง</span><b>฿${fmt(CFG.deposit)}</b></div>
+    <div style="height:10px;border-radius:999px;background:var(--line);overflow:hidden"><div style="width:${t.dep / CFG.deposit * 100}%;height:100%;background:var(--pri)"></div></div>
+    <span class="q" style="font-size:13px">รับแล้ว ฿${fmt(t.dep)} (${Math.round(t.dep / CFG.deposit * 100)}%)</span></div>
+    <dl style="margin:0;display:grid;grid-template-columns:max-content 1fr;gap:8px 16px;font-size:14px"><dt class="q">บัญชีรับเงิน</dt><dd style="margin:0">${t.bank}</dd><dt class="q">Approve ใน INT</dt><dd style="margin:0">${t.app}</dd><dt class="q">เงิน hold รอปล่อย</dt><dd style="margin:0">฿${fmt(held(t.id))}</dd></dl>
+    ${t.st === 'VERIFY' ? `<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-o" style="flex:1 1 120px" data-act="askdoc">ขอเอกสารเพิ่ม</button><button class="btn btn-p" style="flex:2 1 200px" data-act="verify" data-id="${t.id}">ยืนยันรับเงิน → ACTIVE</button></div><p class="sub" style="font-size:13px">เมื่อยืนยัน BMT จะแจ้ง INT ว่าช่างรับงานได้ และสร้าง Supplier ใน Oracle</p>` : ''}
+    ${t.st === 'PENDING' ? `<button class="btn btn-o" data-act="remind" data-id="${t.id}">ส่งแจ้งเตือนให้วางเงิน (Line OA)</button>` : ''}
+    <a class="btn btn-o" href="#/techdetail/${t.id}">ดูประวัติการเงินทั้งหมด</a></aside></div>`;
+};
+
+V.techdetail = (id) => {
+  const t = T(id) || T('TC-0145');
+  const my = jobs.filter(j => j.tech === t.id);
+  const inW = my.filter(j => ['RETAINED', 'HOLD', 'DUE'].includes(j.s2));
+  const last = inW.map(j => j.wend).sort((a, b) => pd(b) - pd(a))[0];
+  const hold = my.filter(j => j.s2 === 'HOLD').length;
+  const canRefund = t.st === 'OFFBOARD' && !inW.length;
+  const rows = [];
+  my.forEach(j => { const [a, b] = split(j.total); rows.push([j.closed, `งวดแรก ${CFG.p1}% · ${j.job}`, j.id, j.s1 === 'PAID' ? a : 0, b, S1[j.s1]]); if (j.s2 === 'PAID') rows.push([j.wend, `ปล่อยเงิน hold ${CFG.p2}%`, j.id, b, 0, S2.PAID]); });
+  rows.push([t.app, 'รับเงินค้ำประกัน', 'DEP-' + t.id.slice(3), t.dep, 0, t.dep ? ['VERIFIED', 'p-ok'] : ['ยังไม่ได้รับ', 'p-wait']]);
+  return `<nav class="crumb"><a href="#/technicians">บัญชีช่าง</a> / ${t.name}</nav>
+  <div class="head"><div style="flex-direction:row;align-items:center;gap:14px"><div style="width:56px;height:56px;border-radius:50%;background:#DBEAFE;color:#1E40AF;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700" aria-hidden="true">${t.name.slice(0, 2)}</div><div><h1>${t.name}</h1><span class="q" style="font-size:14px"><span class="mono">${t.id}</span> · Supplier ${t.sup} · ${t.bank}</span></div></div>${pill(TST[t.st])}</div>
+  <section class="kpis"><div class="kpi"><span class="l">เงินค้ำประกัน</span><span class="v">฿${fmt(t.dep)}</span></div><div class="kpi"><span class="l">เงิน hold ${CFG.p2}% รอปล่อย</span><span class="v">฿${fmt(inW.reduce((s, j) => s + split(j.total)[1], 0))}</span><span class="s">${inW.length} งาน${last ? ' · พ้นประกันล่าสุด ' + last : ''}</span></div><div class="kpi"><span class="l">ได้รับแล้วทั้งหมด</span><span class="v">฿${fmt(rows.slice(0, -1).reduce((s, r) => s + r[3], 0))}</span></div><div class="kpi"><span class="l">ภาระหักคงค้าง</span><span class="v">฿0.00</span><span class="s">${hold ? hold + ' งานมีเคลมค้าง' : 'ไม่มีเคลมค้าง'}</span></div></section>
+  <div class="row"><section class="tblwrap grow3"><table><thead><tr><th>วันที่</th><th>รายการ</th><th>อ้างอิง</th><th class="num">ได้รับ</th><th class="num">hold ไว้</th><th>สถานะ</th></tr></thead><tbody>
+  ${rows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td class="mono">${r[2]}</td><td class="num">${r[3] ? fmt(r[3]) : '–'}</td><td class="num">${r[4] ? fmt(r[4]) : '–'}</td><td>${pill(r[5])}</td></tr>`).join('')}
+  </tbody></table></section>
+  <aside class="card grow2"><h2 style="font-size:18px;font-weight:700">คืนเงินค้ำประกัน</h2>
+    <ul class="check" style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px">
+      <li><span class="${t.st === 'OFFBOARD' ? 'ok">✓' : 'warn">!'}</span>${t.st === 'OFFBOARD' ? 'INT แจ้งพ้นสภาพแล้ว' : 'ช่างยังปฏิบัติงานอยู่'}</li>
+      <li><span class="${hold ? 'no">✕' : 'ok">✓'}</span>${hold ? 'มีเคลมค้าง ' + hold + ' งาน' : 'ไม่มีเคลมค้าง'}</li>
+      <li><span class="${inW.length ? 'warn">!' : 'ok">✓'}</span>${inW.length ? `ยังมี ${inW.length} งานในระยะประกัน · คืนได้ตั้งแต่ ${last}` : 'ไม่มีงานในระยะประกัน'}</li></ul>
+    <div class="split"><div><span>เงินค้ำประกัน</span><span>${fmt(t.dep)}</span></div><div><span>หักภาระคงค้าง</span><span>0.00</span></div><div class="tot"><span>ยอดคืน</span><span>฿${fmt(t.dep)}</span></div></div>
+    <button class="btn btn-p" ${canRefund ? '' : 'disabled'} data-act="refund" data-id="${t.id}">${canRefund ? 'สร้างรายการคืนเงิน' : t.st === 'OFFBOARD' ? 'คืนได้ตั้งแต่ ' + last : 'คืนได้เมื่อช่างพ้นสภาพ'}</button>
+    <p class="sub" style="font-size:13px">รายการคืนเงินผ่านการอนุมัติใน BMT และส่ง Oracle เหมือนรายการจ่ายปกติ</p></aside></div>`;
+};
+
+V.retention = () => {
+  const all = jobs.filter(j => j.s2 !== 'PAID' || j.s1 === 'PAID').filter(j => j.s1 === 'PAID');
+  const f = st.retFilter;
+  const list = all.filter(j => f === 'ALL' ? true : f === 'SOON' ? ['RETAINED', 'DUE', 'HOLD'].includes(j.s2) && daysTo(j.wend) <= 30 : j.s2 === f).sort((a, b) => pd(a.wend) - pd(b.wend));
+  const sum = s => all.filter(j => j.s2 === s).reduce((t, j) => t + split(j.total)[1], 0);
+  const cnt = s => all.filter(j => j.s2 === s).length;
+  return `<div class="head"><div><h1>เงิน hold ${CFG.p2}% รอปล่อย</h1><p class="sub">Scheduler ตรวจทุกวัน 06:00 น. — งานที่พ้นประกันและไม่มีเคลมค้างจะเป็น DUE และเข้าคิวอนุมัติ</p></div><a class="btn btn-p" href="#/approvals" data-act="gop2">ไปอนุมัติรายการ DUE (${cnt('DUE')})</a></div>
+  <section class="kpis"><div class="kpi"><span>${pill(S2.RETAINED)}</span><span class="v">฿${fmt(sum('RETAINED'))}</span><span class="s">${cnt('RETAINED')} งาน</span></div><div class="kpi"><span>${pill(S2.DUE)}</span><span class="v">฿${fmt(sum('DUE'))}</span><span class="s">${cnt('DUE')} งาน</span></div><div class="kpi"><span>${pill(S2.HOLD)}</span><span class="v">฿${fmt(sum('HOLD'))}</span><span class="s">${cnt('HOLD')} งาน</span></div><div class="kpi"><span>${pill(S2.PAID)}</span><span class="v">฿${fmt(sum('PAID'))}</span><span class="s">${cnt('PAID')} งาน</span></div></section>
+  <div class="chips">${[['SOON', 'พ้นประกันภายใน 30 วัน'], ['DUE', 'DUE'], ['HOLD', 'มีเคลม'], ['ALL', 'ทั้งหมด']].map(([k, l]) => `<button class="chip ${f === k ? 'on' : ''}" data-act="rf" data-id="${k}">${l}</button>`).join('')}</div>
+  <section class="tblwrap"><table><thead><tr><th>Booking No.</th><th>ช่าง</th><th>งาน</th><th>ปิดงาน</th><th>พ้นประกัน</th><th class="num">เงิน hold ${CFG.p2}%</th><th>สถานะ</th><th></th></tr></thead><tbody>
+  ${list.length ? list.map(j => { const d = daysTo(j.wend); const s = j.s2 === 'RETAINED' ? [d > 0 ? `อีก ${d} วัน` : 'ครบกำหนด', 'p-grey'] : j.s2 === 'HOLD' ? ['ระงับ · เคลม CL-0093', 'p-hold'] : S2[j.s2];
+    return `<tr><td class="mono">${j.id}</td><td>${T(j.tech).name}</td><td>${j.job}</td><td>${j.closed}</td><td>${j.wend}</td><td class="num">${fmt(split(j.total)[1])}</td><td>${pill(s)}</td><td>${j.s2 === 'DUE' ? `<a href="#/approvals" data-act="gop2">อนุมัติ</a>` : j.s2 === 'HOLD' ? `<button class="btn-sm" data-act="closeclaim" data-id="${j.id}">ปิดเคลม (demo)</button>` : '<span class="q">–</span>'}</td></tr>`; }).join('') : '<tr><td colspan="8" class="q" style="text-align:center;padding:28px">ไม่มีรายการ</td></tr>'}
+  </tbody></table></section>`;
+};
+
+V.oracle = () => {
+  const f = st.oraFilter;
+  const base = jobs.flatMap(j => { const [a, b] = split(j.total); const r = []; if (['FAIL', 'SENT', 'PAID'].includes(j.s1)) r.push({ j, k: 'งวดแรก ' + CFG.p1 + '%', amt: a, s: j.s1 }); if (['SENT', 'PAID'].includes(j.s2)) r.push({ j, k: 'ปล่อย hold ' + CFG.p2 + '%', amt: b, s: j.s2 }); return r; });
+  const list = base.filter(r => f === 'ALL' || r.s === f);
+  const c = s => base.filter(r => r.s === s).length;
+  const fj = jobs.find(j => j.s1 === 'FAIL');
+  return `<div class="head"><div><h1>ส่ง Oracle</h1><p class="sub">รายการที่อนุมัติใน BMT ส่งเป็น Payment Request เข้า Oracle · retry อัตโนมัติ 3 ครั้ง</p></div><button class="btn btn-o" data-act="recon">กระทบยอด (Reconcile) วันนี้</button></div>
+  <section class="kpis"><div class="kpi"><span class="l">ส่งแล้ว รอ Oracle</span><span class="v">${c('SENT')}</span></div><div class="kpi"><span class="l">จ่ายแล้ว</span><span class="v" style="color:#166534">${c('PAID')}</span></div><div class="kpi ${c('FAIL') ? 'bad' : ''}"><span class="l">SYNC_FAILED</span><span class="v">${c('FAIL')}</span></div></section>
+  <div class="chips">${[['FAIL', 'SYNC_FAILED'], ['SENT', 'รอ Oracle'], ['PAID', 'จ่ายแล้ว'], ['ALL', 'ทั้งหมด']].map(([k, l]) => `<button class="chip ${f === k ? 'on' : ''}" data-act="of" data-id="${k}">${l} (${k === 'ALL' ? base.length : c(k)})</button>`).join('')}</div>
+  <section class="tblwrap"><table><thead><tr><th>Booking No.</th><th>งวด</th><th>Supplier</th><th class="num">ยอด</th><th>ครั้ง</th><th>สถานะ</th><th></th></tr></thead><tbody>
+  ${list.length ? list.map(r => `<tr class="${r.s === 'FAIL' ? 'err' : ''}"><td class="mono">${r.j.id}</td><td>${r.k}</td><td class="mono">${T(r.j.tech).sup}</td><td class="num">${fmt(r.amt)}</td><td>${r.s === 'FAIL' ? r.j.tries + '/3' : '1'}</td><td>${pill(S1[r.s])}</td><td>${r.s === 'FAIL' ? `<button class="btn-sm red" data-act="resend" data-id="${r.j.id}">ส่งซ้ำ</button>` : ''}</td></tr>`).join('') : '<tr><td colspan="7" class="q" style="text-align:center;padding:28px">ไม่มีรายการ</td></tr>'}
+  </tbody></table></section>
+  ${fj ? `<section class="card"><h2>Log การเรียก API · ${fj.id}</h2><div class="row"><div style="flex:1 1 300px;min-width:0;display:flex;flex-direction:column;gap:8px;font-size:13.5px">
+    <div style="display:flex;justify-content:space-between;padding:10px 12px;border:1px solid var(--line);border-radius:8px"><span>ครั้งที่ 1 · 10:05:12 น.</span><span class="no">504 Timeout</span></div>
+    <div style="display:flex;justify-content:space-between;padding:10px 12px;border:1px solid var(--line);border-radius:8px"><span>ครั้งที่ 2 · 10:06:13 น.</span><span class="no">504 Timeout</span></div>
+    <div style="display:flex;justify-content:space-between;padding:10px 12px;border:1px solid #FCA5A5;background:#FEF2F2;border-radius:8px"><span>ครั้งที่ 3 · 10:21:14 น.</span><span class="no">503 Unavailable</span></div>
+    <span class="q" style="font-size:13px">Idempotency key: <span class="mono">BMT-${fj.id}-P1</span> — ส่งซ้ำไม่สร้างรายการซ้ำใน Oracle</span></div>
+    <pre class="code mono" style="flex:1 1 360px;min-width:0">POST /ap/payment-requests
+{
+  "supplier_id": "${T(fj.tech).sup}",
+  "amount": ${split(fj.total)[0].toFixed(2)},
+  "currency": "THB",
+  "reference": "${fj.id} / งวดแรก ${CFG.p1}%"
+}
+← 503 {"error":"service unavailable"}</pre></div></section>` : ''}`;
+};
+
+V.audit = () => {
+  const q = st.auditQ.trim().toLowerCase();
+  const list = audit.filter(a => !q || (a[3] + a[2] + a[4] + a[1][0]).toLowerCase().includes(q));
+  return `<div class="head"><div><h1>Audit log</h1><p class="sub">ทุกการเปลี่ยนสถานะ แก้ไขข้อมูล และเรียก API · เวลา Asia/Bangkok · แก้ไขหรือลบไม่ได้</p></div><button class="btn btn-o" data-act="csv-audit">ส่งออก CSV</button></div>
+  <div class="card" style="flex-direction:row;flex-wrap:wrap;align-items:flex-end"><label class="field" style="flex:1 1 280px">ค้นหา (Booking, ช่าง, action)<input id="aq" type="search" value="${esc(st.auditQ)}" placeholder="เช่น BK-2611-00418"></label><span class="q" style="font-size:13px">ลองกดอนุมัติหรือส่งซ้ำในหน้าอื่น แล้วกลับมาดูรายการใหม่ที่นี่</span></div>
+  <section class="tblwrap"><table><thead><tr><th>เวลา</th><th>ผู้ทำ</th><th>Action</th><th>อ้างอิง</th><th>ค่าเดิม → ค่าใหม่</th></tr></thead><tbody>
+  ${list.map(a => `<tr><td>${a[0]}</td><td>${pill(a[1])}</td><td>${esc(a[2])}</td><td class="mono">${esc(a[3])}</td><td>${esc(a[4])}</td></tr>`).join('')}
+  </tbody></table></section><p class="sub" style="font-size:13px">แสดง ${list.length} จาก ${audit.length} รายการ</p>`;
+};
+
+V.reports = () => {
+  const by = techs.map(t => { const my = jobs.filter(j => j.tech === t.id); const tot = my.reduce((s, j) => s + j.total, 0); return { t, n: my.length, tot, p1: my.reduce((s, j) => s + split(j.total)[0], 0), p2: my.reduce((s, j) => s + split(j.total)[1], 0), rel: my.filter(j => j.s2 === 'PAID').reduce((s, j) => s + split(j.total)[1], 0) }; }).filter(r => r.n).sort((a, b) => b.tot - a.tot);
+  const S = k => by.reduce((s, r) => s + r[k], 0);
+  return `<div class="head"><div><h1>รายงาน</h1><p class="sub">เลือกรายงาน กำหนดช่วงเวลา แล้วดูหรือส่งออก</p></div></div>
+  <div class="kpis">${[['tech', 'สรุปการจ่ายรายช่าง', `งวดแรก ${CFG.p1}%, hold ${CFG.p2}% ต่อช่าง`], ['aging', 'เงิน hold คงค้าง (Aging)', 'ตามเดือนพ้นประกัน'], ['dep', 'เงินค้ำประกันช่าง', 'รับ / คืน / คงเหลือ'], ['recon', 'กระทบยอดกับ Oracle', 'ยอดไม่ตรงหรือค้างส่ง']].map(([k, l, d]) => `<button class="kpi" data-act="rep" data-id="${k}" style="text-align:left;cursor:pointer;font:inherit;${st.rep === k ? 'border:2px solid var(--pri);background:#EFF6FF' : ''}"><span style="font-weight:600;font-size:15px">${l}</span><span class="s">${d}</span></button>`).join('')}</div>
+  <div class="card" style="flex-direction:row;flex-wrap:wrap;align-items:flex-end"><label class="field" style="flex:1 1 200px">ช่วงวันที่ปิดงาน<input type="text" value="01/05/2026 – 10/11/2026"></label><label class="field" style="flex:1 1 160px">ประเภทงาน<select><option>ทั้งหมด</option><option>Q</option><option>R</option><option>MA</option></select></label><button class="btn btn-p" data-act="csv-rep">ส่งออก Excel (CSV)</button></div>
+  ${st.rep === 'tech' ? `<section class="tblwrap"><table><thead><tr><th>ช่าง</th><th class="num">จำนวนงาน</th><th class="num">ค่างานรวม</th><th class="num">งวดแรก ${CFG.p1}%</th><th class="num">hold ${CFG.p2}%</th><th class="num">ปล่อย hold แล้ว</th></tr></thead><tbody>
+  ${by.map(r => `<tr><td>${r.t.name}</td><td class="num">${r.n}</td><td class="num">${fmt(r.tot)}</td><td class="num">${fmt(r.p1)}</td><td class="num">${fmt(r.p2)}</td><td class="num">${fmt(r.rel)}</td></tr>`).join('')}</tbody>
+  <tfoot><tr><td>รวม</td><td class="num">${S('n')}</td><td class="num">${fmt(S('tot'))}</td><td class="num">${fmt(S('p1'))}</td><td class="num">${fmt(S('p2'))}</td><td class="num">${fmt(S('rel'))}</td></tr></tfoot></table></section>` : `<div class="card" style="align-items:center;padding:40px;text-align:center"><h2>ตัวอย่างรายงานนี้ยังไม่มีใน Demo</h2><p class="sub">ใน Demo แสดงเฉพาะ "สรุปการจ่ายรายช่าง"</p></div>`}`;
+};
+
+V.settings = () => `<div class="head"><div><h1>ตั้งค่าระบบ</h1><p class="sub">สำหรับ Admin · ค่าที่เปลี่ยนใช้กับรายการใหม่เท่านั้น (รายการเดิม snapshot ค่าไว้แล้ว) · ทุกการแก้ไขบันทึกใน Audit log</p></div><button class="btn btn-p" data-act="save">บันทึก</button></div>
+  <div class="row"><div class="grow3" style="display:flex;flex-direction:column;gap:16px">
+    <section class="card"><h2>กติกาการจ่ายตามประเภทงาน</h2><div style="overflow-x:auto"><table><thead><tr><th>ประเภทงาน</th><th>จ่ายทันที (%)</th><th>hold ไว้ (%)</th><th>ระยะรับประกัน (วัน)</th></tr></thead><tbody>
+    ${['Q · Quick', 'R · Renovate', 'MA'].map(n => `<tr><td>${n}</td><td><input class="rate" type="number" min="0" max="100" value="${CFG.p1}" aria-label="จ่ายทันที ${n}" style="width:90px;font:inherit;border:1px solid #94A3B8;border-radius:8px;padding:8px"></td><td><span class="mono">${CFG.p2}</span></td><td><input type="text" placeholder="[รอยืนยัน]" aria-label="ระยะประกัน ${n}" style="width:120px;font:inherit;border:1px solid #94A3B8;border-radius:8px;padding:8px"></td></tr>`).join('')}
+    </tbody></table></div><p class="sub" style="font-size:13px">จ่ายทันที + hold = 100% · ตัวอย่าง: งาน 2,000 บาท → จ่ายทันที ${fmt(split(2000)[0])} · hold ${fmt(split(2000)[1])}</p></section>
+    <section class="card"><h2>เงินค้ำประกันช่าง</h2><label class="field" style="max-width:240px">ยอดที่ต้องวาง (บาท)<input type="text" value="${fmt(CFG.deposit)}"></label>
+      <fieldset style="border:0;padding:0;margin:0;display:flex;flex-direction:column;gap:8px"><legend class="q" style="font-size:13px;margin-bottom:8px">วิธีรับเงิน (รอยืนยัน)</legend>
+      <label style="display:flex;gap:10px;padding:12px;border:1px solid var(--line);border-radius:10px;font-size:14px"><input type="radio" name="dep" checked><span><b>โอนก้อนเดียวก่อนรับงาน</b><br><span class="q">ช่างเป็น ACTIVE เมื่อ Finance ยืนยันรับเงินครบ</span></span></label>
+      <label style="display:flex;gap:10px;padding:12px;border:1px solid var(--line);border-radius:10px;font-size:14px"><input type="radio" name="dep"><span><b>ทยอยหักจากค่างานจนครบ</b><br><span class="q">ช่างรับงานได้ทันที ระบบหักจากงวดแรกตามอัตราที่กำหนด</span></span></label></fieldset></section>
+    <section class="card"><h2>วงเงินอนุมัติและรอบจ่าย</h2><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px"><label class="field">Approver อนุมัติได้ไม่เกิน (บาท/ชุด)<input type="text" placeholder="[รอยืนยัน]"></label><label class="field">เกินวงเงิน ส่งต่อให้<select><option>Finance Manager</option></select></label><label class="field">รอบส่ง Oracle<select><option>ทันทีที่อนุมัติ</option><option>ทุกวัน 16:00 น.</option><option>รายสัปดาห์</option></select></label></div></section>
+  </div><div class="grow2" style="display:flex;flex-direction:column;gap:16px">
+    <section class="card"><h2>การเชื่อมต่อระบบ</h2>${[['CRM', 'webhook Close Job', 1], ['INT', 'ช่าง Approved / สถานะ', 1], ['Oracle', 'Payment Request', !jobs.some(j => j.s1 === 'FAIL')], ['LON', 'Line OA', 1]].map(([n, d, ok]) => `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font-size:14px"><span><b>${n}</b> · ${d}</span><span style="display:flex;gap:8px;align-items:center">${pill(ok ? ['ปกติ', 'p-ok'] : ['มี error', 'p-fail'])}<button class="btn-sm" data-act="test" data-id="${n}">ทดสอบ</button></span></div>`).join('')}</section>
+    <section class="card"><h2>ผู้ใช้และสิทธิ์</h2>${[['วรรณา', 'Finance / Payment Officer'], ['สมพร', 'Approver'], ['ธีระ', 'Finance Manager'], ['กฤษณ์', 'Admin'], ['ผู้บริหาร (3)', 'ดูอย่างเดียว']].map(([a, b]) => `<div style="display:flex;justify-content:space-between;font-size:14px"><span>${a}</span><span class="q">${b}</span></div>`).join('')}<p class="sub" style="font-size:13px">ผู้สร้างรายการอนุมัติรายการของตัวเองไม่ได้ (Segregation of Duties)</p></section>
+  </div></div>`;
+
+V.statement = () => {
+  const me = T('TC-0102'), my = jobs.filter(j => j.tech === me.id);
+  const f = st.stmtTab;
+  const list = my.filter(j => f === 'ALL' || (f === 'PAID' ? j.s1 === 'PAID' : ['RETAINED', 'HOLD', 'DUE'].includes(j.s2)));
+  const got = my.filter(j => j.s1 === 'PAID').reduce((s, j) => s + split(j.total)[0], 0) + my.filter(j => j.s2 === 'PAID').reduce((s, j) => s + split(j.total)[1], 0);
+  const held = my.filter(j => ['RETAINED', 'HOLD', 'DUE'].includes(j.s2)).reduce((s, j) => s + split(j.total)[1], 0);
+  return `<div class="head"><div><h1>Statement ช่าง (มือถือ)</h1><p class="sub">มุมมองของช่าง ${me.name} — เปิดจากลิงก์ใน Line OA</p></div></div>
+  <div class="phone"><header style="background:var(--nav);color:#fff;padding:24px 20px 20px;display:flex;flex-direction:column;gap:14px">
+    <div style="display:flex;justify-content:space-between;align-items:center"><div><span style="font-size:13px;color:#CBD5E1">สวัสดี</span><div style="font-size:18px;font-weight:700">${me.name}</div></div>${pill(TST[me.st])}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div style="background:var(--nav2);border-radius:12px;padding:12px"><span style="font-size:12px;color:#CBD5E1">ได้รับแล้ว</span><div style="font-size:20px;font-weight:700">฿${fmt(got)}</div></div><div style="background:var(--nav2);border-radius:12px;padding:12px"><span style="font-size:12px;color:#CBD5E1">เงิน hold ${CFG.p2}% รอปล่อย</span><div style="font-size:20px;font-weight:700">฿${fmt(held)}</div></div></div>
+    <div style="display:flex;justify-content:space-between;font-size:13px;color:#CBD5E1"><span>เงินค้ำประกัน ฿${fmt(me.dep)}</span><span>ครบแล้ว ✓</span></div></header>
+    <div class="seg" role="tablist">${[['ALL', 'ทั้งหมด'], ['PAID', 'จ่ายแล้ว'], ['HELD', 'รอปล่อย']].map(([k, l]) => `<button role="tab" aria-selected="${f === k}" class="${f === k ? 'on' : ''}" data-act="sf" data-id="${k}">${l}</button>`).join('')}</div>
+    <ul style="list-style:none;margin:0;padding:8px 16px 16px;display:flex;flex-direction:column;gap:10px;overflow-y:auto;flex:1">
+    ${list.map(j => { const [a, b] = split(j.total); return `<li style="background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:8px">
+      <div style="display:flex;justify-content:space-between;gap:8px"><span style="font-weight:600;font-size:15px">${j.job.split(' · ')[1]}</span>${pill(j.s1 === 'PAID' ? ['จ่ายแล้ว', 'p-ok'] : j.s1 === 'WAIT' ? ['รออนุมัติ', 'p-wait'] : S1[j.s1])}</div>
+      <span class="mono q" style="font-size:12px">${j.id} · ปิดงาน ${j.closed}</span>
+      <div style="display:flex;flex-direction:column;gap:4px;font-size:14px;border-top:1px dashed #CBD5E1;padding-top:8px">
+        <div style="display:flex;justify-content:space-between"><span class="q">ค่างาน</span><span>${fmt(j.total)}</span></div>
+        <div style="display:flex;justify-content:space-between"><span class="q">จ่ายทันที ${CFG.p1}%</span><b>${fmt(a)}</b></div>
+        <div style="display:flex;justify-content:space-between"><span class="q">hold ${CFG.p2}% · ${j.s2 === 'PAID' ? 'ปล่อยแล้ว' : 'ปล่อย ' + j.wend}</span><span>${fmt(b)}</span></div></div>
+      ${j.s2 === 'HOLD' ? '<span style="font-size:13px;color:#5B21B6">ระงับไว้จนกว่าเคลม CL-0093 จะปิด</span>' : ''}</li>`; }).join('')}
+    </ul></div>`;
+};
+
+// ---------- Router & actions ----------
+function render() {
+  const [, route = 'login', arg] = location.hash.split('/');
+  const r = V[route] ? route : 'login';
+  document.getElementById('app').innerHTML = r === 'login' ? V.login() : shell(r, V[r](arg));
+  document.title = 'BMT Demo · ' + (NAV.find(n => n[0] === r) || ['', 'เข้าสู่ระบบ'])[1];
+  const aq = document.getElementById('aq'); if (aq) { aq.oninput = e => { st.auditQ = e.target.value; render(); const n = document.getElementById('aq'); n.focus(); n.setSelectionRange(n.value.length, n.value.length); }; }
+  const rates = document.querySelectorAll('.rate'); rates.forEach(i => i.onchange = e => { const v = Math.max(0, Math.min(100, Number(e.target.value) || 0)); st.pendingRate = v; rates.forEach(x => x.value = v); });
+}
+function sendOracle(j, inst) {
+  const key = inst === 1 ? 's1' : 's2'; j[key] = 'SENT';
+  log(['ระบบ', 'p-grey'], 'ส่ง Payment Request', j.id + (inst === 1 ? ' · งวดแรก' : ' · ปล่อย hold'), 'APPROVED → SENT_TO_ORACLE · HTTP 201');
+  setTimeout(() => { j[key] = 'PAID'; log(['Oracle API', 'p-hold'], 'รับผลอนุมัติจ่าย', j.id, 'SENT_TO_ORACLE → PAID'); toast('Oracle อนุมัติจ่าย ' + j.id + ' แล้ว'); render(); }, 1800);
+}
+function approve(ids) {
+  const inst = st.tab === 'p1' ? 1 : 2;
+  ids.forEach(id => { const j = J(id); const amt = split(j.total)[inst - 1]; log(['สมพร (Approver)', 'p-sent'], inst === 1 ? 'อนุมัติงวดแรก' : 'อนุมัติปล่อยเงิน hold', j.id, `WAIT_APPROVAL → APPROVED · ฿${fmt(amt)}`); sendOracle(j, inst); delete st.checked[id]; });
+  toast(`อนุมัติ ${ids.length} รายการ · ส่ง Oracle แล้ว`); render();
+}
+function reject(ids) {
+  const note = (document.getElementById('note') || {}).value || '';
+  if (!note.trim()) { toast('กรุณาระบุเหตุผลในหมายเหตุก่อนปฏิเสธ'); const n = document.getElementById('note'); if (n) n.focus(); return; }
+  ids.forEach(id => { const j = J(id); log(['สมพร (Approver)', 'p-sent'], 'ปฏิเสธรายการจ่าย', j.id, 'WAIT_APPROVAL → REJECTED · ' + note); if (st.tab === 'p1') j.s1 = 'REJ'; else j.s2 = 'RETAINED'; delete st.checked[id]; });
+  S1.REJ = ['ปฏิเสธ', 'p-fail']; toast(`ปฏิเสธ ${ids.length} รายการ`); render();
+}
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]'); if (!el) return;
+  const a = el.dataset.act, id = el.dataset.id;
+  const shown = () => jobs.filter(j => st.tab === 'p1' ? j.s1 === 'WAIT' : j.s2 === 'DUE');
+  switch (a) {
+    case 'tab': st.tab = id; st.sel = (shown()[0] || {}).id; break;
+    case 'sel': st.sel = id; break;
+    case 'chk': st.checked[id] = el.checked; break;
+    case 'all': shown().forEach(j => st.checked[j.id] = el.checked); break;
+    case 'approve': approve(shown().filter(j => st.checked[j.id]).map(j => j.id)); return;
+    case 'approve1': approve([id]); return;
+    case 'reject': reject(shown().filter(j => st.checked[j.id]).map(j => j.id)); return;
+    case 'reject1': reject([id]); return;
+    case 'gop2': st.tab = 'p2'; st.sel = (jobs.find(j => j.s2 === 'DUE') || {}).id; return;
+    case 'resend': { const j = J(id); log(['วรรณา (Finance)', 'p-sent'], 'ส่งซ้ำ Oracle', j.id, 'SYNC_FAILED → RETRY'); sendOracle(j, 1); toast('ส่งซ้ำ ' + j.id + ' แล้ว'); break; }
+    case 'of': st.oraFilter = id; break;
+    case 'tf': st.techFilter = id; break;
+    case 'tsel': st.techSel = id; break;
+    case 'verify': { const t = T(id); t.st = 'ACTIVE'; t.sup = 'SUP-10' + id.slice(3); log(['วรรณา (Finance)', 'p-sent'], 'ยืนยันรับเงินค้ำประกัน', t.id, `VERIFY → ACTIVE · ฿${fmt(t.dep)} · แจ้ง INT แล้ว`); toast(t.name + ' เป็น ACTIVE แล้ว · แจ้ง INT แล้ว'); break; }
+    case 'remind': log(['ระบบ', 'p-grey'], 'แจ้งเตือนวางเงินค้ำประกัน', id, 'ส่ง Line OA'); toast('ส่งแจ้งเตือนผ่าน Line OA แล้ว'); return;
+    case 'askdoc': toast('ส่งคำขอเอกสารเพิ่มให้ช่างแล้ว'); return;
+    case 'refund': toast('สร้างรายการคืนเงินค้ำประกันแล้ว · รออนุมัติ'); return;
+    case 'rf': st.retFilter = id; break;
+    case 'closeclaim': { const j = J(id); j.s2 = daysTo(j.wend) <= 0 ? 'DUE' : 'RETAINED'; log(['CRM API', 'p-hold'], 'ปิดเคลม CL-0093', j.id, 'HOLD → ' + j.s2); toast('ปิดเคลมแล้ว · ' + j.id + ' เป็น ' + j.s2); break; }
+    case 'ev': st.evSel = id; break;
+    case 'recheck': { const ev = events.find(x => x.id === id); if (T(ev.tech).st === 'ACTIVE' && ev.qc[1] === 'p-ok') { ev.res = ['สร้างรายการจ่ายแล้ว', 'p-ok']; jobs.unshift({ id: ev.id, tech: ev.tech, job: 'R · ' + ev.task, total: ev.total, closed: '10/11/2026', wend: '10/02/2027', s1: 'WAIT', s2: 'RETAINED', tries: 0 }); log(['ระบบ', 'p-grey'], 'สร้างรายการจ่ายจาก event เดิม', ev.id, `– → WAIT_APPROVAL · ฿${fmt(split(ev.total)[0])}`); toast('สร้างรายการจ่ายแล้ว · ไปที่คิวอนุมัติ'); } else toast('ยังไม่ผ่านเงื่อนไข: ' + ev.why); break; }
+    case 'refresh': toast('ดึงข้อมูลจาก CRM แล้ว · ไม่มี event ใหม่'); return;
+    case 'recon': toast('กระทบยอดแล้ว · ยอด BMT ตรงกับ Oracle'); return;
+    case 'test': toast('ทดสอบการเชื่อมต่อ ' + id + ' สำเร็จ'); return;
+    case 'save': if (st.pendingRate != null && st.pendingRate !== CFG.p1) { log(['กฤษณ์ (Admin)', 'p-sent'], 'แก้ไขกติกาการจ่าย', 'config', `${CFG.p1}/${CFG.p2} → ${st.pendingRate}/${100 - st.pendingRate}`); CFG.p1 = st.pendingRate; CFG.p2 = 100 - st.pendingRate; toast(`บันทึกแล้ว · กติกาใหม่ ${CFG.p1}/${CFG.p2}`); } else toast('บันทึกแล้ว'); break;
+    case 'sf': st.stmtTab = id; break;
+    case 'rep': st.rep = id; break;
+    case 'csv-rep': case 'csv-audit': {
+      const rows = a === 'csv-audit' ? [['เวลา', 'ผู้ทำ', 'Action', 'อ้างอิง', 'รายละเอียด']].concat(audit.map(x => [x[0], x[1][0], x[2], x[3], x[4]]))
+        : [['ช่าง', 'Booking', 'งาน', 'ค่างาน', `งวดแรก ${CFG.p1}%`, `hold ${CFG.p2}%`, 'สถานะงวดแรก', 'สถานะ hold']].concat(jobs.map(j => [T(j.tech).name, j.id, j.job, j.total, ...split(j.total), S1[j.s1][0], S2[j.s2][0]]));
+      const csv = '﻿' + rows.map(r => r.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(',')).join('\n');
+      const u = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); const l = document.createElement('a'); l.href = u; l.download = a === 'csv-audit' ? 'bmt-audit.csv' : 'bmt-report.csv'; l.click(); setTimeout(() => URL.revokeObjectURL(u), 1000); return; }
+    default: return;
+  }
+  render();
+});
+window.addEventListener('hashchange', render);
+render();
+</script>
+</body>
+</html>
