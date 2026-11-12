@@ -30,7 +30,7 @@ export function resolveDatabaseMode(
     return { mode: 'embedded' };
   }
 
-  const rawUrl = env.DATABASE_URL?.trim();
+  const rawUrl = env.DATABASE_URL?.trim().replace(/^["']|["']$/g, '').trim();
   const hasRealUrl = Boolean(rawUrl) && !isPlaceholderUrl(rawUrl);
 
   if (env.USE_EXTERNAL_PG === 'true') {

@@ -1,5 +1,5 @@
 [phases.setup]
-nixPkgs = ["...", "openssl"]
+nixPkgs = ["...", "openssl", "curl", "wget"]
 nixLibs = ["...", "stdenv.cc.cc.lib", "zlib", "openssl"]
 
 [variables]
@@ -10,8 +10,8 @@ cmds = ["npm ci --include=dev"]
 
 [phases.build]
 cmds = [
-  "DATABASE_URL=${DATABASE_URL:-postgresql://placeholder:placeholder@127.0.0.1:5432/bmt_db?schema=public} npx prisma generate --schema=prisma/schema",
-  "DATABASE_URL=${DATABASE_URL:-postgresql://placeholder:placeholder@127.0.0.1:5432/bmt_db?schema=public} npx next build"
+  "USE_EXTERNAL_PG=false DATABASE_URL=postgresql://placeholder:placeholder@127.0.0.1:5432/bmt_db?schema=public npx prisma generate --schema=prisma/schema",
+  "USE_EXTERNAL_PG=false DATABASE_URL=postgresql://placeholder:placeholder@127.0.0.1:5432/bmt_db?schema=public npx next build"
 ]
 
 [start]

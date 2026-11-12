@@ -39,7 +39,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build Production Dockerfile
         run: docker build -t bmt-docker .
-      - name: Smoke Test Dockerfile with External PostgreSQL 16 (Auto-Migrate + Seed)
+      - name: Smoke Test Dockerfile + In-Container Coolify Healthcheck
         run: |
           docker run -d --name bmt-dk --network host \
             -e PORT=3200 \
@@ -47,14 +47,14 @@ jobs:
             -e DATABASE_URL="postgres://postgres:coolify_secret_password@127.0.0.1:5432/bmt_prod" \
             bmt-docker
           for i in $(seq 1 30); do
-            if curl -sf http://127.0.0.1:3200/login > /dev/null; then
-              echo "Dockerfile container healthy!"
+            if docker exec bmt-dk curl -fsSL http://127.0.0.1:3200/api/health > /dev/null; then
+              echo "Dockerfile in-container curl healthcheck passed!"
               break
             fi
             sleep 2
           done
-          docker logs bmt-dk
-          curl -sf http://127.0.0.1:3200/login > /dev/null
+          test "$(docker exec bmt-dk curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3200/)" = "200"
+          docker exec bmt-dk wget -qO- http://127.0.0.1:3200/api/health | grep -q '"status":"ok"'
           curl -sf http://127.0.0.1:3200/api/openapi | grep -q '"openapi":"3.1.0"'
           curl -sf -c cookies.txt -X POST http://127.0.0.1:3200/api/auth/login \
             -H "Content-Type: application/json" \
@@ -96,21 +96,21 @@ jobs:
             echo "::error title=NixpacksBuildError::${ERR_SNIPPET}"
             exit "$CODE"
           fi
-      - name: Smoke Test Nixpacks with External PostgreSQL 16 (Auto-Migrate + Seed)
+      - name: Smoke Test Nixpacks + In-Container Coolify Healthcheck
         run: |
           docker run -d --name bmt-nx --network host \
             -e PORT=3100 \
             -e DATABASE_URL="postgres://postgres:coolify_secret_password@127.0.0.1:5432/bmt_prod" \
             bmt-nixpacks
           for i in $(seq 1 30); do
-            if curl -sf http://127.0.0.1:3100/login > /dev/null; then
-              echo "Nixpacks container healthy!"
+            if docker exec bmt-nx curl -fsSL http://127.0.0.1:3100/api/health > /dev/null; then
+              echo "Nixpacks in-container curl healthcheck passed!"
               break
             fi
             sleep 2
           done
-          docker logs bmt-nx
-          curl -sf http://127.0.0.1:3100/login > /dev/null
+          test "$(docker exec bmt-nx curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3100/)" = "200"
+          docker exec bmt-nx wget -qO- http://127.0.0.1:3100/api/health | grep -q '"status":"ok"'
           curl -sf http://127.0.0.1:3100/api/openapi | grep -q '"openapi":"3.1.0"'
           curl -sf -c cookies.txt -X POST http://127.0.0.1:3100/api/auth/login \
             -H "Content-Type: application/json" \
