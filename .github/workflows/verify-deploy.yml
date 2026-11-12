@@ -1,0 +1,80 @@
+name: Verify Build & Coolify Deployment
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  unit-and-integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci
+      - run: DATABASE_URL="postgresql://placeholder:placeholder@127.0.0.1:5432/bmt_db?schema=public" npx prisma generate --schema=prisma/schema
+      - run: npm run typecheck
+      - run: npm test
+
+  verify-dockerfile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Production Dockerfile
+        run: docker build -t bmt-docker .
+      - name: Smoke Test Dockerfile Container
+        run: |
+          docker run -d --name bmt-dk -p 3200:3000 bmt-docker
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:3200/login > /dev/null; then
+              echo "Dockerfile container healthy!"
+              break
+            fi
+            sleep 2
+          done
+          docker logs bmt-dk
+          curl -sf http://127.0.0.1:3200/login > /dev/null
+          curl -sf http://127.0.0.1:3200/api/openapi | grep -q '"openapi":"3.1.0"'
+          curl -sf -c cookies.txt -X POST http://127.0.0.1:3200/api/auth/login \
+            -H "Content-Type: application/json" \
+            -d '{"email":"krit@company.co.th","quickSwitch":true}' | grep -q '"role":"ADMIN"'
+          curl -sf -b cookies.txt "http://127.0.0.1:3200/api/reports?mode=dashboard" | grep -q '"kpis"'
+          docker rm -f bmt-dk
+
+  verify-nixpacks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Nixpacks CLI
+        run: curl -sSL https://nixpacks.com/install.sh | sudo bash
+      - name: Show Nixpacks Plan
+        run: |
+          nixpacks plan -f toml . --env NIXPACKS_NODE_VERSION=22
+      - name: Build with Nixpacks (Exact Coolify Command)
+        run: |
+          nixpacks build . --name bmt-nixpacks \
+            --env NIXPACKS_NODE_VERSION=22 \
+            --env COOLIFY_URL=https://bmt.vhomesvc.online/ \
+            --env COOLIFY_FQDN=bmt.vhomesvc.online/ \
+            --env COOLIFY_BRANCH=main
+      - name: Smoke Test Nixpacks Container
+        run: |
+          docker run -d --name bmt-nx -p 3100:3000 bmt-nixpacks
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:3100/login > /dev/null; then
+              echo "Nixpacks container healthy!"
+              break
+            fi
+            sleep 2
+          done
+          docker logs bmt-nx
+          curl -sf http://127.0.0.1:3100/login > /dev/null
+          curl -sf http://127.0.0.1:3100/api/openapi | grep -q '"openapi":"3.1.0"'
+          curl -sf -c cookies.txt -X POST http://127.0.0.1:3100/api/auth/login \
+            -H "Content-Type: application/json" \
+            -d '{"email":"krit@company.co.th","quickSwitch":true}' | grep -q '"role":"ADMIN"'
+          curl -sf -b cookies.txt "http://127.0.0.1:3100/api/reports?mode=dashboard" | grep -q '"kpis"'
+          docker rm -f bmt-nx
