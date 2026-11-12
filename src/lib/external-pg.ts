@@ -1,7 +1,10 @@
-import { execFileSync } from 'node:child_process';
+import { execFile } from 'node:child_process';
 import path from 'node:path';
+import { promisify } from 'node:util';
 import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
+
+const execFileAsync = promisify(execFile);
 
 const postgresUrlSchema = z
   .string()
@@ -48,32 +51,53 @@ export function resolveDatabaseMode(
 
 export async function initExternalPostgres(url: string): Promise<PrismaClient> {
   process.env.DATABASE_URL = url;
-  const prismaCli = path.join(
-    process.cwd(),
-    'node_modules',
-    'prisma',
-    'build',
-    'index.js',
-  );
+  const probe = new PrismaClient({ datasources: { db: { url } } });
 
+  let tableExists = false;
   try {
-    execFileSync(
-      process.execPath,
-      [prismaCli, 'migrate', 'deploy', '--schema=prisma/schema'],
-      {
-        cwd: process.cwd(),
-        env: { ...process.env, DATABASE_URL: url },
-        stdio: 'pipe',
-      },
+    const rows = await probe.$queryRaw<Array<{ exists: boolean }>>`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables
+        WHERE table_schema = 'public' AND table_name = 'User'
+      ) AS "exists"
+    `;
+    tableExists = Boolean(rows[0]?.exists);
+  } finally {
+    await probe.$disconnect();
+  }
+
+  if (!tableExists) {
+    const prismaCli = path.join(
+      process.cwd(),
+      'node_modules',
+      'prisma',
+      'build',
+      'index.js',
     );
-  } catch (err: unknown) {
-    const stderr =
-      err && typeof err === 'object' && 'stderr' in err && Buffer.isBuffer(err.stderr)
-        ? err.stderr.toString('utf8').trim()
-        : '';
-    throw new Error(
-      `ไม่สามารถเชื่อมต่อหรือสร้างตารางบน PostgreSQL ได้: ${stderr || (err instanceof Error ? err.message : 'Unknown error')}`,
-    );
+    try {
+      await execFileAsync(
+        process.execPath,
+        [
+          prismaCli,
+          'db',
+          'execute',
+          '--file=prisma/migrations/0001_init/migration.sql',
+          '--schema=prisma/schema',
+        ],
+        {
+          cwd: process.cwd(),
+          env: { ...process.env, DATABASE_URL: url },
+        },
+      );
+    } catch (err: unknown) {
+      const stderr =
+        err && typeof err === 'object' && 'stderr' in err && typeof err.stderr === 'string'
+          ? err.stderr.trim()
+          : '';
+      throw new Error(
+        `ไม่สามารถสร้างตารางบน PostgreSQL ได้: ${stderr || (err instanceof Error ? err.message : 'Unknown error')}`,
+      );
+    }
   }
 
   const client = new PrismaClient({ datasources: { db: { url } } });
