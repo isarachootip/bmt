@@ -39,11 +39,22 @@ interface DashboardSummaryDto {
 
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardSummaryDto | null>(null);
+  const [seeding, setSeeding] = useState(false);
+
+  async function loadDashboard() {
+    const res = await fetch('/api/reports?mode=dashboard');
+    if (res.ok) setData((await res.json()) as DashboardSummaryDto);
+  }
+
+  async function handleSeedDemo() {
+    setSeeding(true);
+    await fetch('/api/demo', { method: 'POST' });
+    await loadDashboard();
+    setSeeding(false);
+  }
 
   useEffect(() => {
-    void fetch('/api/reports?mode=dashboard')
-      .then((r) => (r.ok ? (r.json() as Promise<DashboardSummaryDto>) : null))
-      .then((res) => setData(res));
+    void loadDashboard();
   }, []);
 
   if (!data) {
@@ -59,7 +70,15 @@ export default function DashboardPage() {
             สถานะคิวอนุมัติจ่าย 90/10 เงินประกันผลงานคงค้าง และสุขภาพการเชื่อมต่อระบบภายนอก
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            disabled={seeding}
+            onClick={() => void handleSeedDemo()}
+            className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-700 hover:bg-blue-800 text-white cursor-pointer disabled:opacity-60"
+          >
+            {seeding ? 'กำลังโหลด Demo...' : '+ โหลดข้อมูล Demo'}
+          </button>
           <StatusPill label="INT · ปกติ" tone="ok" />
           <StatusPill label="CRM · ปกติ" tone="ok" />
           <StatusPill

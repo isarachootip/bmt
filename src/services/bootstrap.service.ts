@@ -23,18 +23,17 @@ const INITIAL_TECHS = [
   { code: 'TC-0145', name: 'มานพ เลิกงาน', bank: 'ออมสิน', acc: '0203346610', tax: '1100700666610', st: 'OFFBOARDING' as const, depSt: 'VERIFIED' as const, dep: 10000, sup: 'SUP-10145', app: '2026-04-11T09:00:00+07:00' },
   { code: 'TC-0312', name: 'สุรชัย ทำจริง', bank: 'กรุงศรี', acc: '3017762290', tax: '1100700772290', st: 'ACTIVE' as const, depSt: 'VERIFIED' as const, dep: 10000, sup: 'SUP-10312', app: '2026-07-18T09:00:00+07:00' },
   { code: 'TC-0188', name: 'วิชัย ช่างดี', bank: 'ทหารไทยธนชาต', acc: '2194408145', tax: '1100700888145', st: 'ACTIVE' as const, depSt: 'VERIFIED' as const, dep: 10000, sup: 'SUP-10188', app: '2026-05-05T09:00:00+07:00' },
+  { code: 'TC-0274', name: 'วีระ ซ่อมไว', bank: 'กสิกรไทย', acc: '0893312044', tax: '1100700992044', st: 'ACTIVE' as const, depSt: 'VERIFIED' as const, dep: 10000, sup: 'SUP-10274', app: '2026-06-20T09:00:00+07:00' },
 ];
 
-let bootstrapped = false;
+export interface DemoSeedSummary {
+  users: number;
+  technicians: number;
+  jobs: number;
+  payables: number;
+}
 
-export async function ensureBootstrapped(prisma: PrismaClient): Promise<void> {
-  if (bootstrapped || process.env.VITEST) return;
-  const userCount = await prisma.user.count();
-  if (userCount > 0) {
-    bootstrapped = true;
-    return;
-  }
-
+export async function seedDemoDataset(prisma: PrismaClient): Promise<DemoSeedSummary> {
   const cfgRepo = new ConfigRepository(prisma);
   await cfgRepo.getSystemSetting();
   await cfgRepo.ensureDefaultJobRules();
@@ -50,6 +49,9 @@ export async function ensureBootstrapped(prisma: PrismaClient): Promise<void> {
 
   const { ENCRYPTION_KEY } = getEnv();
   for (const t of INITIAL_TECHS) {
+    const existing = await prisma.technician.findUnique({ where: { code: t.code } });
+    if (existing) continue;
+
     const created = await prisma.technician.create({
       data: {
         code: t.code,
@@ -68,6 +70,19 @@ export async function ensureBootstrapped(prisma: PrismaClient): Promise<void> {
       },
     });
 
+    await prisma.integrationLog.create({
+      data: {
+        targetSystem: 'INT',
+        direction: 'INBOUND',
+        endpoint: 'POST /api/webhooks/int/technician-approved',
+        idempotencyKey: `INT-APPROVED-${t.code}`,
+        httpStatus: 201,
+        requestBody: JSON.stringify({ technicianCode: t.code, fullName: t.name, bankName: t.bank }),
+        responseBody: JSON.stringify({ status: 'PENDING_DEPOSIT', code: t.code }),
+        success: true,
+      },
+    });
+
     if (t.dep > 0) {
       await prisma.depositTransaction.create({
         data: {
@@ -83,7 +98,7 @@ export async function ensureBootstrapped(prisma: PrismaClient): Promise<void> {
           technicianId: created.id,
           entryType: 'DEPOSIT_IN',
           referenceCode: `DEP-${t.code}`,
-          description: 'รับเงินค้ำประกันช่างแรกเข้า',
+          description: 'รับเงินค้ำประกันช่างแรกเข้า (ยืนยันสลิปแล้ว)',
           amount: t.dep,
           balanceAfter: t.dep,
         },
@@ -102,16 +117,45 @@ export async function ensureBootstrapped(prisma: PrismaClient): Promise<void> {
 
   await seedSampleJobs(prisma);
 
-  await prisma.auditLog.create({
-    data: {
-      actorName: 'ระบบ',
-      actorRole: 'SYSTEM',
-      action: 'เริ่มต้นฐานข้อมูล BMT',
-      entityRef: 'SYSTEM',
-      oldValue: null,
-      newValue: 'สร้างผู้ใช้งาน 5 บทบาท และบัญชีช่างตัวอย่าง 8 ราย',
-    },
+  const initAuditExists = await prisma.auditLog.findFirst({
+    where: { entityRef: 'DEMO-SEED' },
   });
+  if (!initAuditExists) {
+    await prisma.auditLog.create({
+      data: {
+        actorName: 'ระบบ',
+        actorRole: 'SYSTEM',
+        action: 'โหลดข้อมูลตัวอย่าง BMT ครบทุกโมดูล',
+        entityRef: 'DEMO-SEED',
+        oldValue: null,
+        newValue: 'ผู้ใช้งาน 5 บทบาท, ช่าง 9 ราย, งานปิดจ๊อบ 10 งาน, เคลม 2 เคส และประวัติ Oracle/LON',
+      },
+    });
+  }
 
+  const [users, technicians, jobs, payables] = await Promise.all([
+    prisma.user.count(),
+    prisma.technician.count(),
+    prisma.jobPayment.count(),
+    prisma.payableItem.count(),
+  ]);
+  return { users, technicians, jobs, payables };
+}
+
+let bootstrapped = false;
+
+export async function ensureBootstrapped(prisma: PrismaClient): Promise<void> {
+  if (bootstrapped || process.env.VITEST) return;
+  const [userCount, techCount, jobCount] = await Promise.all([
+    prisma.user.count(),
+    prisma.technician.count(),
+    prisma.jobPayment.count(),
+  ]);
+  if (userCount > 0 && techCount >= INITIAL_TECHS.length && jobCount > 0) {
+    bootstrapped = true;
+    return;
+  }
+
+  await seedDemoDataset(prisma);
   bootstrapped = true;
 }
