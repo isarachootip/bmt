@@ -1,0 +1,17 @@
+[phases.setup]
+aptPkgs = ["...", "libstdc++6", "openssl", "ca-certificates"]
+
+[variables]
+LD_LIBRARY_PATH = "/usr/lib/x86_64-linux-gnu:/usr/lib/aarch64-linux-gnu"
+
+[phases.install]
+cmds = ["npm ci --include=dev"]
+
+[phases.build]
+cmds = [
+  "DATABASE_URL=${DATABASE_URL:-postgresql://placeholder:placeholder@127.0.0.1:5432/bmt_db?schema=public} npx prisma generate --schema=prisma/schema",
+  "DATABASE_URL=${DATABASE_URL:-postgresql://placeholder:placeholder@127.0.0.1:5432/bmt_db?schema=public} npx next build"
+]
+
+[start]
+cmd = "npm run start"
