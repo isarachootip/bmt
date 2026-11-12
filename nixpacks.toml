@@ -2,6 +2,9 @@
 nixPkgs = ["...", "openssl"]
 nixLibs = ["...", "stdenv.cc.cc.lib", "zlib", "openssl"]
 
+[variables]
+NODE_OPTIONS = "--experimental-require-module"
+
 [phases.install]
 cmds = ["npm ci --include=dev"]
 
