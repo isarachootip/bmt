@@ -1,6 +1,6 @@
 [phases.setup]
 nixPkgs = ["...", "openssl"]
-nixLibs = ["...", "gcc-unwrapped", "openssl"]
+nixLibs = ["...", "stdenv.cc.cc.lib", "zlib", "openssl"]
 
 [phases.install]
 cmds = ["npm ci --include=dev"]
