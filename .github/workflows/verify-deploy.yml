@@ -21,13 +21,31 @@ jobs:
 
   verify-dockerfile:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: coolify_secret_password
+          POSTGRES_DB: bmt_prod
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
       - name: Build Production Dockerfile
         run: docker build -t bmt-docker .
-      - name: Smoke Test Dockerfile Container
+      - name: Smoke Test Dockerfile with External PostgreSQL 16 (Auto-Migrate + Seed)
         run: |
-          docker run -d --name bmt-dk -p 3200:3000 bmt-docker
+          docker run -d --name bmt-dk --network host \
+            -e PORT=3200 \
+            -e USE_EXTERNAL_PG=true \
+            -e DATABASE_URL="postgres://postgres:coolify_secret_password@127.0.0.1:5432/bmt_prod" \
+            bmt-docker
           for i in $(seq 1 30); do
             if curl -sf http://127.0.0.1:3200/login > /dev/null; then
               echo "Dockerfile container healthy!"
@@ -46,6 +64,20 @@ jobs:
 
   verify-nixpacks:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: coolify_secret_password
+          POSTGRES_DB: bmt_prod
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
       - name: Install Nixpacks CLI
@@ -64,9 +96,12 @@ jobs:
             echo "::error title=NixpacksBuildError::${ERR_SNIPPET}"
             exit "$CODE"
           fi
-      - name: Smoke Test Nixpacks Container
+      - name: Smoke Test Nixpacks with External PostgreSQL 16 (Auto-Migrate + Seed)
         run: |
-          docker run -d --name bmt-nx -p 3100:3000 bmt-nixpacks
+          docker run -d --name bmt-nx --network host \
+            -e PORT=3100 \
+            -e DATABASE_URL="postgres://postgres:coolify_secret_password@127.0.0.1:5432/bmt_prod" \
+            bmt-nixpacks
           for i in $(seq 1 30); do
             if curl -sf http://127.0.0.1:3100/login > /dev/null; then
               echo "Nixpacks container healthy!"

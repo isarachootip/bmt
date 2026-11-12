@@ -4,6 +4,7 @@ import path from 'node:path';
 import { PGlite } from '@electric-sql/pglite';
 import { PGLiteSocketServer } from '@electric-sql/pglite-socket';
 import { PrismaClient } from '@prisma/client';
+import { initExternalPostgres, resolveDatabaseMode } from './external-pg';
 
 export interface EmbeddedPgHandle {
   prisma: PrismaClient;
@@ -87,8 +88,9 @@ export async function getPrisma(): Promise<PrismaClient> {
   }
   if (!globalForPrisma.bmtPrismaReady) {
     globalForPrisma.bmtPrismaReady = (async () => {
-      if (process.env.USE_EXTERNAL_PG === 'true') {
-        const client = new PrismaClient();
+      const dbMode = resolveDatabaseMode(process.env);
+      if (dbMode.mode === 'external') {
+        const client = await initExternalPostgres(dbMode.url);
         globalForPrisma.bmtPrisma = client;
         return client;
       }
@@ -97,7 +99,10 @@ export async function getPrisma(): Promise<PrismaClient> {
       const handle = await createEmbeddedPostgresHandle(dataDir);
       globalForPrisma.bmtPrisma = handle.prisma;
       return handle.prisma;
-    })();
+    })().catch((err: unknown) => {
+      globalForPrisma.bmtPrismaReady = undefined;
+      throw err;
+    });
   }
   return globalForPrisma.bmtPrismaReady;
 }
