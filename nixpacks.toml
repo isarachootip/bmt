@@ -1,8 +1,6 @@
 [phases.setup]
-aptPkgs = ["...", "libstdc++6", "openssl", "ca-certificates"]
-
-[variables]
-LD_LIBRARY_PATH = "/usr/lib/x86_64-linux-gnu:/usr/lib/aarch64-linux-gnu"
+nixPkgs = ["...", "openssl"]
+nixLibs = ["...", "gcc-unwrapped", "openssl"]
 
 [phases.install]
 cmds = ["npm ci --include=dev"]
